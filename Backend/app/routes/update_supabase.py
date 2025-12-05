@@ -213,7 +213,7 @@ async def upsert_dt(supasession:AsyncSession = supa_session_dep, localsession:As
             uploaded_image = uploader.uploadFile(filepath=val.image)
         else:
             uploaded_image = None
-            
+        
             
         values = {"geom": val.geom,
                 "transformer_id" : val.transformer_id,
@@ -239,6 +239,9 @@ async def upsert_dt(supasession:AsyncSession = supa_session_dep, localsession:As
             })
         await supasession.exec(upsert_stmt)
         await supasession.commit()
+        print(f"UPSERT COMPLETE: {val.transformer_id}")
+            
+
         
     return JSONResponse({
         "UPSERT STATUS": "SUCESSFUL"
@@ -251,10 +254,40 @@ async def upsert_line_bushing(localsession:AsyncSession = local_session_dep, sup
     primary_line_bushing_values = [
         dict(
             geom = val.geom,
-            phasing = val.phasing,            
+            line_bushing_name = val.line_bushing_id,
+            phasing = val.phasing     
         ) for val in local_bushing.fetchall()
     ]
 
     insert_stmt = insert(LineBushing).values(primary_line_bushing_values)
-    await supasession.exec(insert_stmt)
+    upsert_stmt = insert_stmt.on_conflict_do_update(
+        index_elements=["line_bushing_name"],
+        set_=dict(
+            geom = insert_stmt.excluded.geom,
+            phasing = insert_stmt.excluded.phasing
+        )
+    )
+    await supasession.exec(upsert_stmt)
     await supasession.commit()
+    
+    # SECONDARY LINE BUSHING
+    local_secondary_line_bushing = await localsession.exec(select(localLineBushing).where(cast(localLineBushing.description, Text).ilike("%SECONDARY%")))
+    secondary_line_bushing_val = [
+        dict(
+            geom = val.geom,
+            line_bushing_name = val.line_bushing_id,
+            phasing = val.phasing
+            ) for val in local_secondary_line_bushing
+    ]
+    insert_secondary_lb = insert(LineBushing).values(secondary_line_bushing_val)
+    upsert_secondary_lb = insert_secondary_lb.on_conflict_do_update(
+        index_elements=["line_bushing_name"],
+        set_=dict(
+            geom = insert_stmt.excluded.geom,
+            phasing = insert_stmt.excluded.phasing
+        ))
+    await supasession.exec(upsert_secondary_lb)
+    await supasession.commit()
+    return JSONResponse({
+        "UPSERT STATUS": "SUCESSFUL"
+    })

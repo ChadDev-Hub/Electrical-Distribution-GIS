@@ -124,6 +124,10 @@ is_node_active = DDL(
     UPDATE gis.primary_lines as pl
     SET isactive = new.isactive
     where pl.substation_id = new.id;
+    
+    UPDATE gis.distribution_transformer as dt
+    set isactive = new.isactive
+    where dt.substation_id = new.id;
 
     RETURN NULL;
     END;
@@ -392,7 +396,7 @@ class LineBushing(SQLModel, table=True):
     geom: Optional[str] = Field(sa_column=Column(name="geom", type_=Geometry("LINESTRING", 4326), index=True))
     substation_id: Optional[int] = Field(sa_column=Column(name="substation_id", type_=Integer))
     primary_line_id: Optional[int] = Field(sa_column=Column(ForeignKey("primary_lines.id"),name="primary_line_id", type_=Integer))
-    line_bushing_name: Optional[str] = Field(sa_column=Column(name="line_bushing_name", type_=Text))
+    line_bushing_name: Optional[str] = Field(sa_column=Column(name="line_bushing_name", type_=Text, unique=True))
     from_node_id: Optional[str] = Field(sa_column=Column(name="from_node_id", type_=Text))
     to_node_id: Optional[str] = Field(sa_column=Column(name="to_node_id", type_=Text))
     phasing: Optional[str] = Field(sa_column=Column(name="phasing", type_=Text))
@@ -445,7 +449,7 @@ line_bushing_update = DDL(
     ELSIF EXISTS (SELECT 1 FROM gis.distribution_transformer as dt where st_intersects(dt.geom, st_STARTPOINT(new.geom)))
     THEN 
         SELECT 
-        dt.substation,
+        dt.substation_id,
         dt.transformer_id,
         'SECONDARY LINE BUSHING',
         dt.village,
@@ -525,7 +529,8 @@ line_bushing_after_update = DDL(
     ELSIF new.description ILIKE '%%SECONDARY%%' THEN
     UPDATE gis.distribution_transformer as dt
     set
-    to_secondary_node = new.to_node_id
+    to_secondary_node = new.to_node_id,
+    secondary_phasing = new.phasing
     where new.from_node_id = dt.transformer_id;
     END IF;
     RETURN NEW;
