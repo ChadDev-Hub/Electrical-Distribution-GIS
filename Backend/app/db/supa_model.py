@@ -685,13 +685,42 @@ secondary_line_update_trigger = DDL(
     '''
 )
 
+sl_after_function = DDL(
+    """
+    CREATE OR REPLACE FUNCTION gis.sl_after_func()
+    RETURNS TRIGGER AS $$
+    BEGIN
+    UPDATE gis.service_drop as sd 
+    set isactive = new.isactive
+    where sd.secondary_line_id = new.id;
+    RETURN NEW;
+    END;
+    $$ LANGUAGE PLPGSQL;
+    """
+)
+
+sl_after_trigg = DDL(
+    """
+    DO
+        $$
+        BEGIN
+        IF NOT EXISTS (SELECT 1 FROM pg_trigger where tgname = 'sl_after_trigg')
+        THEN
+        CREATE trigger sl_after_trigg
+        AFTER INSERT OR UPDATE ON gis.secondary_lines
+        FOR EACH ROW EXECUTE FUNCTION gis.sl_after_func();
+        END IF;
+    END $$;
+    """
+)
+
 # SERVICE DROP
 class ServiceDrop(SQLModel, table = True):
     __tablename__:str = "service_drop"
     metadata = supa_meta_data
     id: Optional[int] = Field(sa_column=Column(name="id", type_=Integer, primary_key=True))
     dt_id: Optional[str]  = Field(sa_column=Column(name="dt_id", type_=Text))
-    secondary_line_id:Optional[int] = Field(sa_column=Column(ForeignKey("secondary_lines.id"),name="secondary_line_id", type_=Integer))
+    secondary_line_id:Optional[int] = Field(sa_column=Column(ForeignKey("secondary_lines.id"),name="secondary_line_id", type_=Integer, nullable=True))
     geom: Optional[str] = Field(sa_column=Column(name="geom", type_=Geometry("LINESTRING", 4326)))
     service_drop_id: Optional[str] = Field(sa_column=Column(name="service_drop_id", type_=Text, unique=True))
     from_node: Optional[str] = Field(sa_column=Column(name="from_node", type_=Text))
@@ -705,10 +734,12 @@ class ServiceDrop(SQLModel, table = True):
     municipality: Optional[str] = Field(sa_column=Column(name="municipality", type_=Text))
     isactive: Optional[bool] = Field(sa_column=Column(name="isactive" , type_=Boolean))
 
+
 sd_update_function = DDL(
     """
     CREATE OR REPLACE FUNCTION gis.servicedrop_function()
     RETURNS TRIGGER AS $$
+    DECLARE secondary_line_id int;
     DECLARE dt_id text;
     DECLARE from_node text;
     DECLARE to_customer text;
@@ -723,14 +754,13 @@ sd_update_function = DDL(
         and
         n.description ILIKE '%%SECONDARY%%')
         THEN 
-            SELECT sl.dt_id, sl.to_node, sl.phasing, sl.village, sl.municipality
-            INTO dt_id, from_node, phasing, village , municipality
+            SELECT sl.id, sl.dt_id, sl.to_node, sl.phasing, sl.village, sl.municipality
+            INTO secondary_line_id, dt_id, from_node, phasing, village , municipality
             FROM gis.nodes as n
             inner join gis.secondary_lines as sl
             on sl.to_node = n.node_name
             where st_intersects(n.geom, st_startpoint(new.geom))
             AND NEW.description ILIKE '%%SECONDARY%%'
-            AND N.description ILIKE '%%SECONDARY%%'
             LIMIT 1;
 
         elsif exists(SELECT 1 FROM gis.nodes as n
@@ -746,16 +776,29 @@ sd_update_function = DDL(
             on lb.to_node_id = n.node_name 
             where st_intersects(n.geom, st_startpoint(new.geom))
             AND new.description ilike '%%SECONDARY%%'
-            AND n.description ilike '%%SECONDARY%%'
             LIMIT 1;
+        ELSIF EXISTS(SELECT 1 FROM gis.nodes as n
+        INNER JOIN gis.line_bushing as lb
+        on lb.from_node_id = n.node_name
+        WHERE ST_INTERSECTS(n.geom, new.geom)
+        AND n.description ilike '%%PRIMARY%%')
+        THEN
+            SELECT lb.to_node_id, lb.from_node_id,lb.phasing, lb.village, lb.municipality
+            INTO dt_id, from_node, phasing, village, municipality
+            FROM gis.nodes as n
+            INNER JOIN gis.line_bushing as lb
+            ON LB.from_node_id = n.node_name
+            where st_intersects(n.geom, st_startpoint(new.geom))
+            AND new.description ILIKE '%%PRIMARY%%';
         END IF;
 
         SELECT 
-        c.id
+        c.consumer_id
         INTO to_customer 
         from gis.consumer as c
         where st_intersects(c.geom, st_endpoint(new.geom));
 
+        NEW.secondary_line_id:= secondary_line_id;
         NEW.dt_id:= dt_id;
         NEW.from_node:= from_node;
         NEW.To_customer:= to_customer;
@@ -793,6 +836,7 @@ BEGIN
 UPDATE gis.consumer as c
 set
 servicedrop_id = NEW.id,
+phase = case when length(new.phasing) = 2 THEN 1 when length(new.phasing) = 3 then 2 else 3 end ,
 dt_id = NEW.dt_id,
 village = NEW.village,
 municipality = NEW.municipality,
@@ -810,7 +854,7 @@ sd_after_trigger = DDL(
     DO
     $$
     BEGIN
-        IF NOT EXISTS(SELECT 1 FROM pg_trigger where tgname = 'df_after_trigg')
+        IF NOT EXISTS(SELECT 1 FROM pg_trigger where tgname = 'sd_after_trigg')
         THEN
         CREATE trigger sd_after_trigg
         AFTER INSERT OR UPDATE on gis.service_drop

@@ -57,8 +57,9 @@ class Db:
                 supa_model.sd_update_function,
                 supa_model.sd_after_function,
                 supa_model.sd_update_trigger,
-                supa_model.sd_after_trigger
-                
+                supa_model.sd_after_trigger,
+                supa_model.sl_after_function,
+                supa_model.sl_after_trigg
             ]:
                await conn.execute(functrig)
             

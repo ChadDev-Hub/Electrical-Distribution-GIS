@@ -134,6 +134,7 @@ class LocalConsumer(SQLModel, table=True):
 
 class LocalServiceDrop(SQLModel, table = True):
     __tablename__:str = "customer_service_drop"
+    metadata = local_metadata
     geom: Optional[str] = Field(sa_column=Column(name="geom", type_=Geometry("LINESTRING", 4326)))
     id:Optional[int] = Field(sa_column=Column(name="id", type_=Integer, primary_key=True))
     service_drop_id: Optional[str] = Field(sa_column=Column(name="service_drop_id", type_=Text))

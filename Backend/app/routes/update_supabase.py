@@ -402,3 +402,31 @@ async def upsert_consumer(localsession:AsyncSession = local_session_dep, supases
     return JSONResponse({
         "UPSERT" : "SUCCESSFULL"
     })
+
+@router.put("/upsert/service_drop")
+async def upsert_service_drop(localsession:AsyncSession = local_session_dep, supasession:AsyncSession= supa_session_dep):
+    local_sd_stmt = await localsession.exec(select(LocalServiceDrop))
+    local_service_drop_value = [
+        dict(
+            geom = val.geom,
+            service_drop_id = val.service_drop_id,
+            description = val.description,
+            conductor_type = val.conductor_type,
+            isactive = True
+        ) for val in local_sd_stmt.all()
+    ]
+    insert_limit = 500
+    for item in range(0, len(local_service_drop_value), insert_limit):
+        insert_stmt = insert(ServiceDrop).values(local_service_drop_value[item:item + insert_limit])
+        upsert_stmt = insert_stmt.on_conflict_do_update(
+            index_elements=["service_drop_id"],
+            set_=dict(
+                geom = insert_stmt.excluded.geom,
+                description = insert_stmt.excluded.description,
+                conductor_type = insert_stmt.excluded.conductor_type,
+                isactive = insert_stmt.excluded.isactive
+            )
+        )
+        await supasession.exec(upsert_stmt)
+        await supasession.commit()
+        print(f"{item}:{item +insert_limit} Sucessfull Upserted")
