@@ -1,4 +1,4 @@
-from sqlmodel import Field, Text, SQLModel, Integer, Boolean, Column, MetaData, Float, Numeric, ForeignKey, DDL, Table, Relationship, Computed
+from sqlmodel import Field, Text, SQLModel, Integer, Boolean, Column, MetaData, Float, Numeric, ForeignKey, DDL, Table, Relationship, Computed, Index
 from sqlalchemy import events, event
 from geoalchemy2 import Geometry
 from typing import Optional, List
@@ -370,7 +370,35 @@ class DistributionTransformer(SQLModel, table=True):
         primaryjoin = "DistributionTransformer.transformer_type == TransformerType.name",
         foreign_keys="DistributionTransformer.transformer_type"
     ))
-    
+
+dt_switch_function = DDL(
+    """
+CREATE OR REPLACE FUNCTION gis.dt_switch_function()
+RETURNS TRIGGER AS $$
+BEGIN
+    UPDATE gis.secondary_lines as sl
+    set isactive = new.isactive
+    WHERE new.transformer_id = sl.dt_id;
+RETURN NEW;
+END
+$$ LANGUAGE plpgsql;
+"""
+)
+
+dt_switch_trigger = DDL(
+    """
+DO
+$$
+BEGIN
+IF NOT EXISTS(SELECT 1 FROM pg_trigger where tgname = 'dt_switch_trigg')
+THEN 
+CREATE trigger dt_switch_trigg
+AFTER INSERT OR UPDATE ON gis.distribution_transformer
+FOR EACH ROW EXECUTE FUNCTION gis.dt_switch_function();
+END IF;
+END $$; 
+"""
+)
 
 # TRANSFORMER TYPE
 class TransformerType(SQLModel, table=True):
@@ -511,7 +539,7 @@ line_bushing_trigger = DDL(
 
 
 line_bushing_after_update = DDL(
-    r"""
+    """
     CREATE OR REPLACE FUNCTION gis.line_bushing_after_update()
     RETURNS TRIGGER AS 
     $$
@@ -540,7 +568,7 @@ line_bushing_after_update = DDL(
 )
 
 line_bushing_after_trigger  = DDL(
-    r"""
+    """
     DO
         $$
         BEGIN
@@ -556,3 +584,258 @@ line_bushing_after_trigger  = DDL(
     """
 )
 
+# SECONDARY LINE
+class SecondarLines(SQLModel, table = True):
+    __tablename__:str = "secondary_lines"
+    metadata = supa_meta_data
+    __table_args__ = (Index("secondary_lines_geom_gix", "geom", postgresql_using="gist"),)
+    id: Optional[str] = Field(sa_column=Column(name="id", type_=Integer, primary_key=True))
+    line_bushing_id: Optional[int] = Field(sa_column=Column(ForeignKey("line_bushing.id"), type_=Integer))
+    dt_id: Optional[str] = Field(sa_column=Column(name="dt_id", type_=Text))
+    geom: Optional[str] = Field(sa_column=Column(name="geom", type_=Geometry("LINESTRING", 4326)))
+    secondary_line_id: Optional[str] = Field(sa_column=Column(name="secondary_line_id", type_=Text, unique=True))
+    from_node: Optional[str] = Field(sa_column=Column(name="from_node", type_=Text))
+    to_node: Optional[str] = Field(sa_column=Column(name="to_node", type_=Text))
+    phasing: Optional[str] = Field(sa_column=Column(name="phasing", type_=Text))
+    description: Optional[str] = Field(sa_column=Column(name="description", type_=Text))
+    length_meters: Optional[float] = Field(sa_column=Column(Computed("case when ST_LENGTH(ST_TRANSFORM(GEOM,3857)) < 5 then 5 else ST_LENGTH(ST_TRANSFORM(GEOM,3857)) + (ST_LENGTH(ST_TRANSFORM(GEOM,3857)) * 0.10) END "),name="length_meter", type_=Numeric(10,2)))
+    conductor_type: Optional[str] = Field(sa_column=Column(name="conductor_type", type_=Text))
+    village: Optional[str] = Field(sa_column=Column(name="village", type_=Text))
+    municipality: Optional[str] = Field(sa_column=Column(name="municipality", type_=Text))
+    isactive: Optional[bool] = Field(sa_column=Column(name="isactive", type_=Boolean))
+
+
+secondary_line_update = DDL(
+    '''CREATE OR REPLACE FUNCTION gis.secondary_line_update()
+    RETURNS TRIGGER AS $$
+    DECLARE line_bushing_id int;
+    DECLARE dt_id text;
+    DECLARE from_node text;
+    DECLARE to_node text;
+    DECLARE phasing text;
+    DECLARE village text;
+    DECLARE municipality text;
+    BEGIN
+        if exists(
+        select 1 from gis.nodes as n
+        inner join gis.line_bushing as lb
+        on lb.to_node_id = n.node_name
+        where st_intersects(n.geom, st_Startpoint(new.geom))
+        and n.description ilike '%%SECONDARY%%')
+        then
+        select lb.id, lb.from_node_id, lb.to_node_id, lb.phasing, lb.village, lb.municipality
+        into line_bushing_id, dt_id, from_node, phasing, village, municipality
+        from gis.nodes as n
+        inner join gis.line_bushing as lb
+        on lb.to_node_id = n.node_name
+        where
+        st_intersects(n.geom, st_startpoint(new.geom))
+        and n.description ILIKE '%%SECONDARY%%'
+        LIMIT 1;
+
+        elsif exists(select 1 from gis.nodes as n
+        inner join gis.secondary_lines as sl
+        on sl.to_node = n.node_name
+        where st_intersects(n.geom, st_startpoint(new.geom)))
+        then
+        select sl.line_bushing_id, sl.dt_id, sl.to_node, sl.phasing, sl.village, sl.municipality
+        into
+        line_bushing_id, dt_id, from_node, phasing, village, municipality
+        from gis.nodes as n
+        inner join gis.secondary_lines as sl
+        on sl.to_node = n.node_name
+        where st_intersects(n.geom, st_startpoint(new.geom))
+        and n.description ilike '%%SECONDARY%%'
+        LIMIT 1;
+        END IF
+        ;
+
+        select n.node_name
+        into to_node
+        from gis.nodes as n where st_intersects(n.geom, st_endpoint(new.geom))
+        and n.description ilike '%%SECONDARY%%'
+        LIMIT 1;
+
+        NEW.line_bushing_id:= line_bushing_id;
+        NEW.dt_id:= dt_id;
+        NEW.from_node:= from_node;
+        NEW.to_node:= to_node;
+        NEW.phasing:= phasing;
+        NEW.village:= village;
+        NEW.municipality:= municipality;
+        
+        RETURN NEW;
+        END;
+        $$ LANGUAGE plpgsql;
+    ''')
+
+secondary_line_update_trigger = DDL(
+    '''
+    DO
+    $$
+    BEGIN
+        if not exists(select 1 from pg_trigger 
+        where tgname= 'secondary_line_update_trigger')
+        THEN 
+        CREATE trigger secondary_line_update_trigger
+        BEFORE INSERT OR UPDATE on gis.secondary_lines
+        FOR EACH ROW execute function gis.secondary_line_update();
+        END IF;
+    END $$;
+    '''
+)
+
+# SERVICE DROP
+class ServiceDrop(SQLModel, table = True):
+    __tablename__:str = "service_drop"
+    metadata = supa_meta_data
+    id: Optional[int] = Field(sa_column=Column(name="id", type_=Integer, primary_key=True))
+    dt_id: Optional[str]  = Field(sa_column=Column(name="dt_id", type_=Text))
+    secondary_line_id:Optional[int] = Field(sa_column=Column(ForeignKey("secondary_lines.id"),name="secondary_line_id", type_=Integer))
+    geom: Optional[str] = Field(sa_column=Column(name="geom", type_=Geometry("LINESTRING", 4326)))
+    service_drop_id: Optional[str] = Field(sa_column=Column(name="service_drop_id", type_=Text, unique=True))
+    from_node: Optional[str] = Field(sa_column=Column(name="from_node", type_=Text))
+    to_customer: Optional[str] = Field(sa_column=Column(name="to_customer", type_=Text))
+    phasing:Optional[str] = Field(sa_column=Column(name="phasing", type_=Text))
+    descripiton:Optional[str] = Field(sa_column=Column(name="description", type_=Text))
+    length_meter1: Optional[float] = Field(sa_column=Column(Computed("30", persisted=True),name="length_meter1", type_=Numeric(10,2)))
+    length_meter2: Optional[float] = Field(sa_column=Column(Computed("st_length(st_transform(geom, 3857))"),name="length_meter2", type_=Numeric(10,2)))
+    conductor_type: Optional[str] = Field(sa_column=Column(name="conductor_type", type_=Text))
+    village: Optional[str] = Field(sa_column=Column(name="village", type_=Text))
+    municipality: Optional[str] = Field(sa_column=Column(name="municipality", type_=Text))
+    isactive: Optional[bool] = Field(sa_column=Column(name="isactive" , type_=Boolean))
+
+sd_update_function = DDL(
+    """
+    CREATE OR REPLACE FUNCTION gis.servicedrop_function()
+    RETURNS TRIGGER AS $$
+    DECLARE dt_id text;
+    DECLARE from_node text;
+    DECLARE to_customer text;
+    DECLARE phasing text;
+    DECLARE village text;
+    DECLARE municipality text;
+    BEGIN
+        if exists(select 1 from gis.nodes as n
+        inner join gis.secondary_lines as sl
+        on sl.to_node = n.node_name
+        where st_intersects(n.geom, st_startpoint(new.geom))
+        and
+        n.description ILIKE '%%SECONDARY%%')
+        THEN 
+            SELECT sl.dt_id, sl.to_node, sl.phasing, sl.village, sl.municipality
+            INTO dt_id, from_node, phasing, village , municipality
+            FROM gis.nodes as n
+            inner join gis.secondary_lines as sl
+            on sl.to_node = n.node_name
+            where st_intersects(n.geom, st_startpoint(new.geom))
+            AND NEW.description ILIKE '%%SECONDARY%%'
+            AND N.description ILIKE '%%SECONDARY%%'
+            LIMIT 1;
+
+        elsif exists(SELECT 1 FROM gis.nodes as n
+        inner join gis.line_bushing as lb
+        on lb.to_node_id = n.node_name
+        where st_intersects(n.geom, st_startpoint(new.geom))
+        AND n.description ILIKE '%%SECONDARY%%')
+            THEN
+            select lb.from_node_id, lb.to_node_id, lb.phasing, lb.village, lb.municipality
+            INTO dt_id, from_node, phasing, village, municipality
+            FROM gis.nodes as n
+            inner join gis.line_bushing as lb
+            on lb.to_node_id = n.node_name 
+            where st_intersects(n.geom, st_startpoint(new.geom))
+            AND new.description ilike '%%SECONDARY%%'
+            AND n.description ilike '%%SECONDARY%%'
+            LIMIT 1;
+        END IF;
+
+        SELECT 
+        c.id
+        INTO to_customer 
+        from gis.consumer as c
+        where st_intersects(c.geom, st_endpoint(new.geom));
+
+        NEW.dt_id:= dt_id;
+        NEW.from_node:= from_node;
+        NEW.To_customer:= to_customer;
+        NEW.phasing:= phasing;
+        NEW.village:= village;
+        NEW.municipality:= municipality;
+        
+        RETURN NEW;
+        END;
+        $$ LANGUAGE plpgsql;
+    """
+)
+
+sd_update_trigger = DDL(
+    """
+    DO
+    $$
+    BEGIN
+        IF NOT EXISTS(SELECT 1 FROM pg_trigger
+        WHERE tgname = 'sd_update_trigger')
+        then 
+        CREATE trigger sd_update_trigger
+        BEFORE INSERT OR UPDATE on gis.service_drop
+        FOR EACH ROW execute function gis.servicedrop_function();
+        END IF;
+    END $$;
+    """
+)
+
+sd_after_function = DDL(
+    """
+CREATE OR REPLACE function gis.sd_after_update_func()
+RETURNS TRIGGER AS $$
+BEGIN
+UPDATE gis.consumer as c
+set
+servicedrop_id = NEW.id,
+dt_id = NEW.dt_id,
+village = NEW.village,
+municipality = NEW.municipality,
+isactive = NEW.isactive
+WHERE c.consumer_id = NEW.to_customer;
+
+RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+"""
+)
+
+sd_after_trigger = DDL(
+    """
+    DO
+    $$
+    BEGIN
+        IF NOT EXISTS(SELECT 1 FROM pg_trigger where tgname = 'df_after_trigg')
+        THEN
+        CREATE trigger sd_after_trigg
+        AFTER INSERT OR UPDATE on gis.service_drop
+        FOR EACH ROW execute function gis.sd_after_update_func();
+    END IF;
+    END $$;
+"""
+)
+
+class Consumer(SQLModel, table = True):
+    __tablename__:str = "consumer"
+    metadata = supa_meta_data
+    id: Optional[int] = Field(sa_column=Column(name="id", type_=Integer, primary_key=True))
+    dt_id: Optional[str] = Field(sa_column=Column(name="dt_id", type_=Text))
+    service_drop_id: Optional[int] = Field(sa_column=Column(ForeignKey("service_drop.id"),name="servicedrop_id", type_=Integer))
+    geom: Optional[str] = Field(sa_column=Column(name="geom", type_=Geometry("POINT", 4326)))
+    consumer_id: Optional[str] = Field(sa_column=Column(name="consumer_id", type_=Text, unique=True))
+    consumer_name: Optional[str] = Field(sa_column=Column(name="consumer_name", type_=Text))
+    consumer_type: Optional[str] = Field(sa_column=Column(name="consumer_type", type_=Text))
+    service_voltage: Optional[int] = Field(sa_column=Column(name="service_voltage", type_=Integer))
+    description: Optional[str] = Field(sa_column=Column(name="description", type_=Text))
+    phase: Optional[str] = Field(sa_column=Column(name="phase", type_=Text))
+    meter_brand: Optional[str] = Field(sa_column=Column(name="meter_brand", type_=Text))
+    meter_number: Optional[str] = Field(sa_column=Column(name="meter_number", type_=Text))
+    village: Optional[str] = Field(sa_column=Column(name="village", type_=Text))
+    municipality: Optional[str] = Field(sa_column=Column(name="municipality", type_=Text))
+    image: Optional[str] = Field(sa_column=Column(name="image", type_=Text))
+    isactive: Optional[bool] = Field(sa_column=Column(name="isactive", type_=Boolean))

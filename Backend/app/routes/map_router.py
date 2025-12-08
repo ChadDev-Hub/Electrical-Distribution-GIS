@@ -3,7 +3,7 @@ from fastapi.exceptions import HTTPException
 from sqlmodel.ext.asyncio.session import AsyncSession
 from sqlmodel import select, asc
 from ..db.sessesion import Db
-from ..db.supa_model import PrimaryLines, Substation, DistributionTransformer
+from ..db.supa_model import PrimaryLines, Substation, DistributionTransformer, SecondarLines
 from geoalchemy2 import functions
 from geojson import Point, FeatureCollection, Feature, loads, load
 from ..sockets.ws import ConnectionManager
@@ -97,7 +97,7 @@ async def get_mapdata(supassession:AsyncSession):
                                                       DistributionTransformer.municipality,
                                                       DistributionTransformer.image,
                                                       DistributionTransformer.isactive
-                                                      ))
+                                                      ).order_by(asc(DistributionTransformer.id)))
     transformer_feat = {
         "distribtion_transformer":
         [
@@ -113,10 +113,66 @@ async def get_mapdata(supassession:AsyncSession):
                   image = dt_image,
                   isactive = dt_isactive
               )
-              ) for dt_id, dt_geom , dt_name, dt_descripiton, dt_transformer_type, dt_village, dt_municipality, dt_image, dt_isactive in transformer_data
+              ) for 
+              dt_id,
+              dt_geom, 
+              dt_name, 
+              dt_descripiton,
+              dt_transformer_type, 
+              dt_village, 
+              dt_municipality, 
+              dt_image, 
+              dt_isactive in transformer_data
         ]
     }
-    return FeatureCollection(features=[sub_feat,pl_feat, transformer_feat])
+    # SECONDARY LINE DATA
+    secondary_line_data = await supassession.exec(select(
+        SecondarLines.id,
+        functions.ST_AsGeoJSON(SecondarLines.geom).label("geometry"),
+        SecondarLines.secondary_line_id,
+        SecondarLines.from_node,
+        SecondarLines.to_node,
+        SecondarLines.conductor_type,
+        SecondarLines.description,
+        SecondarLines.length_meters,
+        SecondarLines.village,
+        SecondarLines.municipality,
+        SecondarLines.isactive
+    ))
+
+    secondar_lines_feat = {
+        "secondary_line":[
+            Feature(
+                id=sl_id,
+                geometry=loads(sl_geom),
+                properties=dict(
+                    line_id = sl_line_id,
+                    from_node = sl_from_node,
+                    to_node = sl_to_node,
+                    conductory_type = sl_conductor_type,
+                    description = sl_description,
+                    length_meters = float(sl_length_meters),
+                    village = sl_village,
+                    municipality = sl_municipality,
+                    isactive = sl_isactive
+                )
+            )
+            for 
+            sl_id, 
+            sl_geom,
+            sl_line_id, 
+            sl_from_node, 
+            sl_to_node,
+            sl_conductor_type, 
+            sl_description, 
+            sl_length_meters, 
+            sl_village, 
+            sl_municipality, 
+            sl_isactive
+            in secondary_line_data
+        ]
+    }
+    return FeatureCollection(features=[sub_feat,pl_feat, transformer_feat, secondar_lines_feat])
 
 @map_router.get("/mapdata")
 async def get_data(session:AsyncSession = supasessionDep):
@@ -149,8 +205,21 @@ async def update_substation(supassession:AsyncSession = supasessionDep,
     await supassession.refresh(substation)
     feat = await get_mapdata(supassession)
     await manager.broadcast_json(feat)
-       
-         
+
+@map_router.post("/update/distribution_transformer")
+async def update_dt(supassession:AsyncSession = supasessionDep, transformer_id:str= Form(), status:bool = Form()):
+    stmt = await supassession.exec(select(DistributionTransformer).where(DistributionTransformer.transformer_id == transformer_id))
+    transformer = stmt.one()
+    transformer.isactive = status
+    try:
+        supassession.add(transformer)
+        await supassession.commit()
+        await supassession.refresh(transformer)
+    except Exception as e:
+        raise HTTPException(404,str(e))
+    finally:
+        feat = await get_mapdata(supassession)
+        await manager.broadcast_json(feat)         
         
 
 

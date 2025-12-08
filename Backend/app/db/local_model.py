@@ -1,4 +1,4 @@
-from sqlmodel import Field, SQLModel, Text, Integer, Column, Float, MetaData, Numeric
+from sqlmodel import Field, SQLModel, Text, Integer, Column, Float, MetaData, Numeric, REAL
 from typing import Optional
 from geoalchemy2 import Geometry
 
@@ -99,4 +99,50 @@ class localLineBushing(SQLModel, table=True):
     length_meters: Optional[float] = Field(sa_column=Column(name="length_meters", type_=Numeric(10, 4)))
     village: Optional[str] = Field(sa_column=Column(name="village" , type_=Text))
     municipality: Optional[str] = Field(sa_column=Column(name="municipality", type_=Text))
-    
+
+class localSecondary(SQLModel, table=True):
+    __tablename__:str = "secondary_line"
+    metadata = local_metadata
+    id:Optional[int] = Field(sa_column=Column(name="id", type_=Integer, primary_key=True))
+    geom: Optional[str] = Field(sa_column=Column(name="geom", type_=Geometry("LINESTRING", 4326)))
+    secondary_line_id: Optional[str] = Field(sa_column=Column(name="secondary_line_id", type_=Text))
+    from_bus_id: Optional[str] = Field(sa_column=Column(name="from_bus_id", type_=Text))
+    to_bus_id: Optional[str] = Field(sa_column=Column(name="to_bus_id",type_=Text))
+    phasing: Optional[str] = Field(sa_column=Column(name="phasing", type_=Text))
+    description: Optional[str] = Field(sa_column=Column(name="description",type_=Text))
+    length_meters: Optional[float] = Field(sa_column=Column(name="length_meters", type_=Numeric(10,2)))
+    conductor_type: Optional[str] = Field(sa_column=Column(name="conductor_type", type_=Text))
+    village: Optional[str] = Field(sa_column=Column(name="village", type_=Text))
+    municipality: Optional[str] = Field(sa_column=Column(name="municipality", type_=Text))
+
+class LocalConsumer(SQLModel, table=True):
+    __tablename__:str = "customer"
+    metadata = local_metadata
+    geom:Optional[str] = Field(sa_column=Column(name="geom", type_=Geometry("POINT", 4326)))
+    id: Optional[int] = Field(sa_column=Column(name="id", type_= Integer, primary_key=True))
+    customer_id: Optional[str] = Field(sa_column=Column(name="customer_id", type_=Text))
+    customer_name: Optional[str] = Field(sa_column=Column(name="customer_name", type_=Text))
+    customer_type: Optional[str] = Field(sa_column=Column(name="customer_type" ,type_=Text))
+    service_voltage: Optional[int] = Field(sa_column=Column(name="service_voltage",type_=Integer))
+    description:Optional[str] = Field(sa_column=Column(name="description", type_=Text))
+    phase: Optional[int] = Field(sa_column=Column(name="phase", type_=Integer))
+    brand: Optional[str] = Field(sa_column=Column(name="brand", type_=Text))
+    meter_number: Optional[str] = Field(sa_column=Column(name="meter_number", type_=Text))
+    village: Optional[str] = Field(sa_column=Column(name="village", type_=Text))
+    municipality: Optional[str] = Field(sa_column=Column(name="municipality",type_=Text))
+    image: Optional[str] = Field(sa_column=Column(name="image", type_=Text))
+
+class LocalServiceDrop(SQLModel, table = True):
+    __tablename__:str = "customer_service_drop"
+    geom: Optional[str] = Field(sa_column=Column(name="geom", type_=Geometry("LINESTRING", 4326)))
+    id:Optional[int] = Field(sa_column=Column(name="id", type_=Integer, primary_key=True))
+    service_drop_id: Optional[str] = Field(sa_column=Column(name="service_drop_id", type_=Text))
+    from_bus_id: Optional[str] = Field(sa_column=Column(name="from_bus_id", type_=Text))
+    to_customer_id:Optional[str] = Field(sa_column=Column(name="to_customer_id", type_=Text))
+    phasing: Optional[str] = Field(sa_column=Column(name="phasing", type_=Text))
+    description: Optional[str] = Field(sa_column=Column(name="description", type_=Text))
+    length_meters1: Optional[float] = Field(sa_column=Column(name="length_meters1", type_=REAL))
+    length_meters2: Optional[float] = Field(sa_column=Column(name="length_meters2", type_=REAL))
+    conductor_type: Optional[str] = Field(sa_column=Column(name="conductor_type", type_=Text))
+    village: Optional[str] = Field(sa_column=Column(name="village", type_=Text))
+    municipality: Optional[str] = Field(sa_column=Column(name="municipality", type_=Text))

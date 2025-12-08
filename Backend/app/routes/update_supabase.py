@@ -4,13 +4,17 @@ from sqlmodel import select, Text, cast, func, null, Integer, distinct, and_, di
 from sqlalchemy.dialects.postgresql import insert
 from ..db.sessesion import Db
 from sqlmodel.ext.asyncio.session import AsyncSession
-from ..db.local_model import localFranchiseArea,localSubstation, localNodes, localPrimaryLine,localDistributionTransformer, localLineBushing
-from ..db.supa_model import FranchiseArea, Substation, Nodes, PrimaryLines, DistributionTransformer, TransformerType, LineBushing
+from ..db.local_model import localFranchiseArea,localSubstation, localNodes, localPrimaryLine,localDistributionTransformer, localLineBushing, localSecondary, LocalConsumer, LocalServiceDrop
+from ..db.supa_model import FranchiseArea, Substation, Nodes, PrimaryLines, DistributionTransformer, TransformerType, LineBushing, SecondarLines, Consumer, ServiceDrop
 from geoalchemy2.shape import to_shape
-from geoalchemy2.functions import ST_Intersects
+from geoalchemy2.functions import ST_Intersects, ST_AsGeoJSON
+from json import loads, dumps
+from geoalchemy2.elements import WKBElement
+from shapely import wkb
 import geojson
 import base64
 import re
+import traceback
 from ..fileuploader.gd_uploader import SupaFileUploader, GoogleFileUploader
 router = APIRouter()
 
@@ -150,7 +154,7 @@ async def update_primary_lines(localsession:AsyncSession = local_session_dep, su
     while True:
         select_primary_line_with_substation_id = await supasession.exec(select(PrimaryLines.to_node).where(PrimaryLines.substation_id != None))
         to_node = select_primary_line_with_substation_id.fetchall()
-        print(len(to_node))
+
         select_primarY_line_without_substation_id = await supasession.exec(select(PrimaryLines).where(and_(PrimaryLines.from_node.in_(to_node),PrimaryLines.substation_id == None)))
         primary_line_data = select_primarY_line_without_substation_id.fetchall()
         if not primary_line_data:
@@ -290,4 +294,111 @@ async def upsert_line_bushing(localsession:AsyncSession = local_session_dep, sup
     await supasession.commit()
     return JSONResponse({
         "UPSERT STATUS": "SUCESSFUL"
+    })
+
+# ROUTE FOR UPSERTING SECONDARY LINES
+@router.put("/upsert/secondary_line")
+async def update_secondary_lines(localsession:AsyncSession = local_session_dep, supasession:AsyncSession = supa_session_dep):
+    local_secondary_lines = await localsession.exec(select(localSecondary))
+    local_sl_data = [dict(
+        geom = val.geom,
+        secondary_line_id  = val.secondary_line_id,
+        description = val.description,
+        conductor_type = val.conductor_type,
+        isactive = True
+    ) for val in local_secondary_lines.fetchall()]
+    batch = 1000
+    for b in range(0,len(local_sl_data), batch):
+        local_sl_value = local_sl_data[b:b+batch]
+        insert_stmt = insert(SecondarLines).values(local_sl_value)
+        upsert_stmt = insert_stmt.on_conflict_do_update(
+            index_elements=["secondary_line_id"],
+            set_=dict(
+                geom = insert_stmt.excluded.geom,
+                description = insert_stmt.excluded.description,
+                conductor_type = insert_stmt.excluded.conductor_type,
+                isactive = insert_stmt.excluded.isactive
+            )
+        )
+        
+        await supasession.exec(upsert_stmt)
+        await supasession.commit()
+        print(f"INSERT SUCCESSFUL: {b}")
+
+    while True:
+        connected_sl = await supasession.exec(select(SecondarLines.to_node).where(SecondarLines.dt_id != None))
+        connected_sl_data = connected_sl.fetchall()
+        print(len(connected_sl_data))
+        disconnected_sl = await supasession.exec(select(SecondarLines).where(and_(cast(SecondarLines.from_node, Text).in_(connected_sl_data), SecondarLines.dt_id == None)))
+        disconnected_sl_data = disconnected_sl.fetchall()
+        print([val.secondary_line_id for val in disconnected_sl_data])
+        print(len([val for val in disconnected_sl_data]))
+        if not disconnected_sl_data:
+            break
+        values = [
+            dict(
+                geom=val.geom,
+                secondary_line_id  = val.secondary_line_id,
+                description = val.description,
+                conductor_type = val.conductor_type,
+                isactive = True
+                 ) for val in disconnected_sl_data
+        ]
+        insert_stmt_sl = insert(SecondarLines).values(values)
+        upsert_stmt_sl = insert_stmt_sl.on_conflict_do_update(
+            index_elements=["secondary_line_id"],
+            set_=dict(
+                geom = insert_stmt_sl.excluded.geom,
+                description = insert_stmt_sl.excluded.description,
+                conductor_type = insert_stmt_sl.excluded.conductor_type,
+                isactive = insert_stmt_sl.excluded.isactive
+            )
+        )
+        try:
+            await supasession.exec(upsert_stmt_sl)
+            await supasession.commit()
+        except Exception:
+            await supasession.rollback()
+
+# ROUTE FOR UPSERTING SERVICE CONSUMER
+@router.put("/upsert/consumer")
+async def upsert_consumer(localsession:AsyncSession = local_session_dep, supasession:AsyncSession= supa_session_dep):
+    local_stmt = await localsession.exec(select(LocalConsumer))
+    local_consumer_values = [
+        dict(
+            geom =val.geom,
+            consumer_id = val.customer_id,
+            consumer_name = val.customer_name,
+            consumer_type = val.customer_type,
+            service_voltage = val.service_voltage,
+            description = val.description,
+            meter_brand = val.brand,
+            meter_number = val.meter_number,
+            image = val.image
+        )
+        
+         for val in 
+        local_stmt.all()]
+    
+    insert_limit = 500
+    for item in range(0,len(local_consumer_values), insert_limit):
+        insert_stmt = insert(Consumer).values(local_consumer_values[item:item + insert_limit])
+        upsert_stmt = insert_stmt.on_conflict_do_update(
+            index_elements=["consumer_id"],
+            set_=dict(
+                geom = insert_stmt.excluded.geom,
+                consumer_name = insert_stmt.excluded.consumer_name, 
+                consumer_type = insert_stmt.excluded.consumer_type,
+                service_voltage = insert_stmt.excluded.service_voltage,
+                description = insert_stmt.excluded.description,
+                meter_brand = insert_stmt.excluded.meter_brand,
+                meter_number = insert_stmt.excluded.meter_number,
+                image = insert_stmt.excluded.image
+            )
+        )
+        await supasession.exec(upsert_stmt)
+        await supasession.commit()
+        print(f"Succesfully upserted {item} :{item + insert_limit} features")
+    return JSONResponse({
+        "UPSERT" : "SUCCESSFULL"
     })

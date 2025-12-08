@@ -49,7 +49,15 @@ class Db:
                 supa_model.line_bushing_update,
                 supa_model.line_bushing_trigger,
                 supa_model.line_bushing_after_update,
-                supa_model.line_bushing_after_trigger
+                supa_model.line_bushing_after_trigger,
+                supa_model.secondary_line_update,
+                supa_model.secondary_line_update_trigger,
+                supa_model.dt_switch_function,
+                supa_model.dt_switch_trigger,
+                supa_model.sd_update_function,
+                supa_model.sd_after_function,
+                supa_model.sd_update_trigger,
+                supa_model.sd_after_trigger
                 
             ]:
                await conn.execute(functrig)
