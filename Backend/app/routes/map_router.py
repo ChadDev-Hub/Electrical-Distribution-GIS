@@ -3,7 +3,7 @@ from fastapi.exceptions import HTTPException
 from sqlmodel.ext.asyncio.session import AsyncSession
 from sqlmodel import select, asc
 from ..db.sessesion import Db
-from ..db.supa_model import PrimaryLines, Substation, DistributionTransformer, SecondarLines
+from ..db.supa_model import PrimaryLines, Substation, DistributionTransformer, SecondarLines, Consumer
 from geoalchemy2 import functions
 from geojson import Point, FeatureCollection, Feature, loads, load
 from ..sockets.ws import ConnectionManager
@@ -172,7 +172,41 @@ async def get_mapdata(supassession:AsyncSession):
             in secondary_line_data
         ]
     }
-    return FeatureCollection(features=[sub_feat,pl_feat, transformer_feat, secondar_lines_feat])
+
+
+    consumer_data = await supassession.exec(
+        select(
+        Consumer.id,
+        functions.ST_AsGeoJSON(Consumer.geom).label("geometry"),
+        Consumer.consumer_id,
+        Consumer.consumer_name,
+        Consumer.consumer_type,
+        Consumer.meter_brand,
+        Consumer.meter_number,
+        Consumer.village,
+        Consumer.municipality,
+        Consumer.isactive
+        ).order_by(asc(Consumer.id))
+    )
+    consumert_feat = {"consumer":[
+        Feature(
+            id=id,
+            geometry=loads(geometry),
+            properties=dict(
+                account_no = consumer_id,
+                name = consumer_name,
+                type = consumer_type,
+                brand = meter_brand,
+                serial_number = meter_number,
+                village = village,
+                municipality = municipality,
+                status = isactive
+            )
+        ) for 
+        id, geometry, consumer_id, consumer_name,  consumer_type, meter_brand, meter_number, village, municipality, isactive  in consumer_data
+    ]}
+
+    return FeatureCollection(features=[sub_feat,pl_feat, transformer_feat, secondar_lines_feat, consumert_feat])
 
 @map_router.get("/mapdata")
 async def get_data(session:AsyncSession = supasessionDep):

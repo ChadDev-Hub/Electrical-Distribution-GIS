@@ -11,6 +11,5 @@ function SecondaryLine(props){
         ]}>
         </Polyline>
     )
-
 }
 export default SecondaryLine;

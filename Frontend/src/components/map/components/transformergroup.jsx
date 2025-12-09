@@ -42,11 +42,11 @@ function TransformerGroup(props){
                         <Card>
                                 <CardActionArea href={props.image} target="_blank" sx={{width: "100%"}}>
                                 <CardMedia
-                                loading="eager"
                                 width="100%"
                                 height="200"
                                 component="img"
                                 image={props.image}
+                                alt="Transformer"
                                 />
                                 </CardActionArea>
                         

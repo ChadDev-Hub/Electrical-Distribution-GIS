@@ -1,23 +1,25 @@
 import React, { useEffect, useState } from "react";
-import { MapContainer, TileLayer, Polyline, Marker, Popup, LayerGroup, LayersControl, Tooltip as LeafletToolTip } from 'react-leaflet'
+import { MapContainer, TileLayer, Polyline, Marker, Popup, LayerGroup, LayersControl, Tooltip as LeafletToolTip, ZoomControl } from 'react-leaflet'
 import Button from '@mui/material/Button';
 import ElectricBoltIcon from '@mui/icons-material/ElectricBolt';
 import useWebSocket from "react-use-websocket";
 import SubstationMarker from "./components/substation";
 import { renderToStaticMarkup } from "react-dom/server";
-import { Container, Stack, Switch } from "@mui/material";
-import MarkerClusterGroup from "react-leaflet-cluster";
+import { Container, Stack, Switch, Zoom } from "@mui/material";
+import MarkerClusterGroup from 'react-leaflet-cluster';
 import L from 'leaflet';
 import TransformerGroup from "./components/transformergroup";
 import RealtimeButton from "./components/realtimelocationButton";
 import RealTimeMarker from "./components/realtimeMarker";
 import SecondaryLine from "./components/secondaryLine";
+import ConsumerMarker from "./components/consumer";
 
 function Mainmap() {
     const [substationData, setSubstationData] = useState([]);
     const [primaryLineData, setPrimaryLineData] = useState([]);
     const [dtData, setdtData] = useState([]);
     const [slData, setSlData] = useState([]);
+    const [consumerData, setConsumerData] = useState([]);
     const [showRealTimeLoc, setRealTimeLoc] = useState(false);
 
     // CENTER MAP POSITION
@@ -26,7 +28,7 @@ function Mainmap() {
     // SOCKET URL
     const socketUrl = "http://127.0.0.1:8000/ws/mapdata";
 
-
+    // WEBSOCKET REPONSE
     const { lastJsonMessage } = useWebSocket(
         socketUrl
     );
@@ -39,6 +41,7 @@ function Mainmap() {
             setPrimaryLineData(lastJsonMessage.features[1].primary_lines)
             setdtData(lastJsonMessage.features[2].distribtion_transformer)
             setSlData(lastJsonMessage.features[3].secondary_line)
+            setConsumerData(lastJsonMessage.features[4].consumer)
         }
         if (!lastJsonMessage) return;
 
@@ -54,9 +57,8 @@ function Mainmap() {
     const showRealtime = () => {
         setRealTimeLoc(!showRealTimeLoc)
     }
-    console.log(slData)
     return (
-        <Container maxWidth={false} sx={{ position: "relative", width: "100vw", height: "100vh", p: 0 }}>
+        <Container maxWidth={false} sx={{width: "100%", height: "100%", p: 0 }}>
             <RealtimeButton showRealtime={showRealtime} showRealTimeLoc={showRealTimeLoc} />
             <MapContainer center={position} zoom={9} scrollWheelZoom={true} style={{ height: "100%", width: "100%" }}>
                 <TileLayer
@@ -64,7 +66,7 @@ function Mainmap() {
                     url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
 
                 />
-                <LayersControl position="topleft">     
+                <LayersControl position="topleft">
                     <LayersControl.Overlay name="Substation" checked>
                         <LayerGroup>
                             {/* SUBSTATION DATA */}
@@ -89,12 +91,14 @@ function Mainmap() {
                             {primaryLineData && primaryLineData.map((pl) => (
                                 <Polyline
                                     key={pl.id}
-                                    eventHandlers={{ mouseover: () => console.log("Primary Lines") }} 
-                                    pathOptions={{ color: pl.properties.isactive ? "orange" : "grey",
-                                        weight:2 }} positions={
+                                    eventHandlers={{ mouseover: () => console.log("Primary Lines") }}
+                                    pathOptions={{
+                                        color: pl.properties.isactive ? "orange" : "grey",
+                                        weight: 2
+                                    }} positions={
                                         [[pl.geometry.coordinates[0][1], pl.geometry.coordinates[0][0]],
                                         [pl.geometry.coordinates[1][1], pl.geometry.coordinates[1][0]]]}
-                                    >
+                                >
                                     <LeafletToolTip>
                                         Primary Line
                                     </LeafletToolTip>
@@ -104,7 +108,6 @@ function Mainmap() {
                                     </Popup>
                                 </Polyline>
                             ))}
-
                         </LayerGroup>
 
 
@@ -137,17 +140,46 @@ function Mainmap() {
                         </LayerGroup>
                     </LayersControl.Overlay>
                     <LayersControl.Overlay name="Secondary Line">
+                        {/* SECONDARY LINE */}
                         <LayerGroup>
-                            {slData && slData.map((sl)=>(
+                            {slData && slData.map((sl) => (
                                 <SecondaryLine
-                                key={sl.id}
-                                coordinates={sl.geometry.coordinates}
-                                isactive = {sl.properties.isactive}
+                                    key={sl.id}
+                                    coordinates={sl.geometry.coordinates}
+                                    isactive={sl.properties.isactive}
                                 />
                             ))}
                         </LayerGroup>
 
                     </LayersControl.Overlay>
+
+                    <LayersControl.Overlay name="Consumer Meter">
+                        {/* Consumer */}
+                        <LayerGroup>
+                            {consumerData && <MarkerClusterGroup
+                                disableClusteringAtZoom={18}  // number
+                                showCoverageOnHover={false}   // optional
+                                chunkedLoading={true}
+
+                            >
+                                {consumerData.map((c) => (
+                                    <ConsumerMarker
+                                        key={c.id}
+                                        coordinates={c.geometry.coordinates}
+                                        accountNumber={c.properties.account_no}
+                                        name={c.properties.name}
+                                        type={c.properties.type}
+                                        brand={c.properties.brand}
+                                        serialNumber={c.properties.serial_number}
+                                        village={c.properties.village}
+                                        municipality={c.properties.municipality}
+                                        status={c.properties.status}
+                                    />
+                                ))}
+                            </MarkerClusterGroup>}
+                        </LayerGroup>
+                    </LayersControl.Overlay>
+
 
                 </LayersControl>
 
