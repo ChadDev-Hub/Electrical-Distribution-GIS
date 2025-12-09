@@ -12,16 +12,28 @@ import {
   Divider,
   List,
   ListItemButton,
-  ListItemText
+  ListItemText,
+  Stack
 } from "@mui/material";
 import MenuIcon from "@mui/icons-material/Menu";
 import { ThemeProvider, createTheme } from "@mui/material/styles";
+import { useLocation, useNavigate } from "react-router-dom";
+
 function HomePage() {
+  const navigate = useNavigate()
+  const location = useLocation()
   const [open, setOpen] = useState(false);
-  const [darkMode, setDarkMode] = useState(false);
-
+  const [darkMode, setDarkMode] = useState(true);
   const isMobile = useMediaQuery("(max-width: 768px)");
-
+  const menuButon = [{
+    "Button": "Map",
+    "ref": "/Map"
+  },
+  {
+    "Button": "DashBoard",
+    "ref" : '/DashBoard'
+  }
+  ]
   const theme = createTheme({
     palette: {
       mode: darkMode ? "dark" : "light",
@@ -37,6 +49,15 @@ function HomePage() {
     typography: { fontFamily: 'Roboto, sans-serif' },
   });
 
+
+  const handleMenuButtonClick = (event) =>{
+      const name = event.currentTarget.dataset.name
+      const menuItem = menuButon.find(m => m.Button == name)
+      console.log(menuItem)
+      if (menuItem.ref) { 
+        navigate(menuItem.ref)
+      }
+  }
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
@@ -57,22 +78,9 @@ function HomePage() {
               Electrical Distribution Maps
             </Typography>
 
-            <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-              <IconButton
-                aria-label={darkMode ? "Switch to light mode" : "Switch to dark mode"}
-                onClick={() => setDarkMode(!darkMode)}
-                sx={{
-                  p: 1.5,
-                  borderRadius: 3,
-                  background: darkMode ? "#333" : "#f0f0f0",
-                  transition: "0.3s ease",
-                  fontSize: 20
-                }}
-              >
-                {darkMode ? "🌙" : "☀️"}
-              </IconButton>
+            <Box dis sx={{ display: "flex", alignItems: "center", gap: 2 }}>
 
-              <IconButton aria-label="Open menu" onClick={() => setOpen(true)}>
+              <IconButton aria-label="Open menu" onClick={() => setOpen(!open)}>
                 <MenuIcon />
               </IconButton>
             </Box>
@@ -84,6 +92,8 @@ function HomePage() {
       {isMobile && (
         <Box
           sx={{
+            mx: 2,
+            marginBottom: 3,
             position: "fixed",
             bottom: 0,
             left: 0,
@@ -91,11 +101,13 @@ function HomePage() {
             display: "flex",
             justifyContent: "center",
             py: 1.5,
-            background: darkMode ? "#121212" : "#ffffff",
-            borderTop: darkMode ? "1px solid #333" : "1px solid #e0e0e0",
+            background: darkMode ? "#1212122c" : "#bebebe56",
+            borderTop: darkMode ? "1px solid #5a5454ff" : "1px solid #585858ff",
+            zIndex: 9999,
+            borderRadius: 60
           }}
         >
-          <IconButton aria-label="Open menu" onClick={() => setOpen(true)}>
+          <IconButton color="primary" aria-label="Open menu" onClick={() => setOpen(!open)}>
             <MenuIcon />
           </IconButton>
         </Box>
@@ -104,14 +116,36 @@ function HomePage() {
       {/* LEFT DRAWER */}
       <Drawer anchor="left" open={open} onClose={() => setOpen(false)}>
         <Box sx={{ width: 280, p: 3, bgcolor: theme.palette.background.paper }} role="presentation" onClick={() => setOpen(false)}>
-          <Typography variant="h6" fontWeight={700} gutterBottom>
-            Navigation
-          </Typography>
-          <Divider sx={{ mb: 2 }} />
+          <Stack
+            alignItems="center"
+            direction="row"
+            justifyContent="space-between"
+            spacing={4}
+          >
+            <Typography variant="h6" fontWeight={700} gutterBottom>
+              Navigation
+            </Typography>
+            <IconButton
+              aria-label={darkMode ? "Switch to light mode" : "Switch to dark mode"}
+              onClick={() => setDarkMode(!darkMode)}
+              sx={{
+
+                position: "flex",
+                justifySelf: "center",
+                background: darkMode ? "#333" : "#f0f0f0",
+                transition: "0.3s ease",
+                fontSize: 20,
+
+              }}
+            >
+              {darkMode ? "🌙" : "☀️"}
+            </IconButton>
+          </Stack>
+          <Divider sx={{ mb: 2, mt: 2 }} />
           <List>
-            {['Dashboard','Profile','Settings','Help'].map((text) => (
-              <ListItemButton key={text} sx={{ borderRadius: 2, mb: 1, '&:hover': { backgroundColor: theme.palette.primary.light, color: '#fff' }}}>
-                <ListItemText primary={text} />
+            {menuButon.map((text, index) => (
+              <ListItemButton  key={index} data-name={text.Button} onClick={handleMenuButtonClick} sx={{ borderRadius: 2, mb: 1, '&:hover': { backgroundColor: theme.palette.primary.light, color: '#fff' } }}>
+                <ListItemText primary={text.Button} />
               </ListItemButton>
             ))}
           </List>
@@ -119,28 +153,33 @@ function HomePage() {
       </Drawer>
 
       {/* MAIN CONTENT */}
-      <Box sx={{ pt: isMobile ? 6 : 14, p: 4, marginTop: 10, display: 'flex', justifyContent: 'center' }}>
+      {location.pathname === "/Map" && <Box sx={{ pt: isMobile ? 6 : 5, px: 0, marginTop: 5, marginBottom: isMobile ? 12 : 5, display: 'flex', justifyContent: 'center' }}>
         <Box
           sx={{
             background: theme.palette.background.paper,
-            p: 5,
             height: "100vh",
             width: '100%',
             maxWidth: 1200,
             minHeight: '500px',
-            borderRadius: 6,
+            borderRadius: 30,
             boxShadow: darkMode
               ? "0 10px 40px rgba(0,0,0,0.6)"
               : "0 10px 40px rgba(16,24,40,0.08)",
             transition: "all 0.3s ease",
+            mx: {
+              xs: 2,
+              sm: 2,
+              md: 0
+            },
+
           }}
         >
-          <Mainmap/>
+          <Mainmap />
         </Box>
-      </Box>
+      </Box>}
     </ThemeProvider>
   );
 }
 
 
-export default  HomePage
+export default HomePage

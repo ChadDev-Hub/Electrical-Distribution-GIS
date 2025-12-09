@@ -1,6 +1,7 @@
 from fastapi import FastAPI
 from .routes.update_supabase import router
 from .routes.map_router import map_router
+from .routes.dashboard_router import dashboard_router
 from fastapi.middleware.cors import CORSMiddleware
 app = FastAPI()
 
@@ -15,3 +16,4 @@ app.add_middleware(
 
 app.include_router(router)
 app.include_router(map_router)
+app.include_router(dashboard_router)

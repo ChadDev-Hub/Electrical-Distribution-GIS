@@ -4,8 +4,7 @@ import Button from '@mui/material/Button';
 import ElectricBoltIcon from '@mui/icons-material/ElectricBolt';
 import useWebSocket from "react-use-websocket";
 import SubstationMarker from "./components/substation";
-import { renderToStaticMarkup } from "react-dom/server";
-import { Container, Stack, Switch, Zoom } from "@mui/material";
+import { Container, Stack, Switch, Zoom , Box} from "@mui/material";
 import MarkerClusterGroup from 'react-leaflet-cluster';
 import L from 'leaflet';
 import TransformerGroup from "./components/transformergroup";
@@ -33,7 +32,6 @@ function Mainmap() {
         socketUrl
     );
 
-
     // SET LATESTS MAPS DATA SENDS BY WEBSOCKET
     useEffect(() => {
         const update_mapdata = async () => {
@@ -58,9 +56,9 @@ function Mainmap() {
         setRealTimeLoc(!showRealTimeLoc)
     }
     return (
-        <Container maxWidth={false} sx={{width: "100%", height: "100%", p: 0 }}>
+        <Box sx={{width: "100%", height: "100%", p: 0}}>
             <RealtimeButton showRealtime={showRealtime} showRealTimeLoc={showRealTimeLoc} />
-            <MapContainer center={position} zoom={9} scrollWheelZoom={true} style={{ height: "100%", width: "100%" }}>
+            <MapContainer center={position} zoom={9} scrollWheelZoom={true} style={{ height: "100%", width: "100%", borderRadius: 30}}>
                 <TileLayer
                     attribution='&copy; <a href="https://carto.com/attributions">CARTO / OpenStreetMap</a>'
                     url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
@@ -185,7 +183,7 @@ function Mainmap() {
 
                 {showRealTimeLoc && <RealTimeMarker />}
             </MapContainer>
-        </Container>
+        </Box>
     )
 }
 
