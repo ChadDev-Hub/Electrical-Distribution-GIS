@@ -17,8 +17,8 @@ import {
 } from "@mui/material";
 import MenuIcon from "@mui/icons-material/Menu";
 import { ThemeProvider, createTheme } from "@mui/material/styles";
-import { useLocation, useNavigate } from "react-router-dom";
-
+import { Outlet, useLocation, useNavigate } from "react-router-dom";
+import DashBoard from "./components/dashboard/dashboard";
 function HomePage() {
   const navigate = useNavigate()
   const location = useLocation()
@@ -27,11 +27,11 @@ function HomePage() {
   const isMobile = useMediaQuery("(max-width: 768px)");
   const menuButon = [{
     "Button": "Map",
-    "ref": "/Map"
+    "ref": "/homepage/map"
   },
   {
     "Button": "DashBoard",
-    "ref" : '/DashBoard'
+    "ref" : '/homepage/dashboard'
   }
   ]
   const theme = createTheme({
@@ -153,30 +153,10 @@ function HomePage() {
       </Drawer>
 
       {/* MAIN CONTENT */}
-      {location.pathname === "/Map" && <Box sx={{ pt: isMobile ? 6 : 5, px: 0, marginTop: 5, marginBottom: isMobile ? 12 : 5, display: 'flex', justifyContent: 'center' }}>
-        <Box
-          sx={{
-            background: theme.palette.background.paper,
-            height: "100vh",
-            width: '100%',
-            maxWidth: 1200,
-            minHeight: '500px',
-            borderRadius: 30,
-            boxShadow: darkMode
-              ? "0 10px 40px rgba(0,0,0,0.6)"
-              : "0 10px 40px rgba(16,24,40,0.08)",
-            transition: "all 0.3s ease",
-            mx: {
-              xs: 2,
-              sm: 2,
-              md: 0
-            },
-
-          }}
-        >
-          <Mainmap />
-        </Box>
-      </Box>}
+      
+          <Outlet/>
+      
+       
     </ThemeProvider>
   );
 }
