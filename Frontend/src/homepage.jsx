@@ -17,11 +17,9 @@ import {
 } from "@mui/material";
 import MenuIcon from "@mui/icons-material/Menu";
 import { ThemeProvider, createTheme } from "@mui/material/styles";
-import { Outlet, useLocation, useNavigate } from "react-router-dom";
-import DashBoard from "./components/dashboard/dashboard";
+import { Outlet, useNavigate } from "react-router-dom";
 function HomePage() {
   const navigate = useNavigate()
-  const location = useLocation()
   const [open, setOpen] = useState(false);
   const [darkMode, setDarkMode] = useState(true);
   const isMobile = useMediaQuery("(max-width: 768px)");
@@ -153,10 +151,7 @@ function HomePage() {
       </Drawer>
 
       {/* MAIN CONTENT */}
-      
-          <Outlet/>
-      
-       
+            <Outlet/>
     </ThemeProvider>
   );
 }

@@ -27,3 +27,4 @@ class ConnectionManager:
                 disconnected.append(connection)
         for con in disconnected:
             self.active_connections.remove(con)
+manager = ConnectionManager()

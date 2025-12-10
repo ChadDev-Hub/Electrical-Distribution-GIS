@@ -1,10 +1,9 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import { MapContainer, TileLayer, Polyline, Marker, Popup, LayerGroup, LayersControl, Tooltip as LeafletToolTip, ZoomControl } from 'react-leaflet'
 import Button from '@mui/material/Button';
 import ElectricBoltIcon from '@mui/icons-material/ElectricBolt';
-import useWebSocket from "react-use-websocket";
 import SubstationMarker from "./components/substation";
-import { Container, Stack, Switch, Zoom , Box} from "@mui/material";
+import { Container, Stack, Switch, Zoom, Box } from "@mui/material";
 import MarkerClusterGroup from 'react-leaflet-cluster';
 import L from 'leaflet';
 import TransformerGroup from "./components/transformergroup";
@@ -12,63 +11,45 @@ import RealtimeButton from "./components/realtimelocationButton";
 import RealTimeMarker from "./components/realtimeMarker";
 import SecondaryLine from "./components/secondaryLine";
 import ConsumerMarker from "./components/consumer";
-
+import { useWS } from "../webSocketContext";
 function Mainmap() {
-    const [substationData, setSubstationData] = useState([]);
-    const [primaryLineData, setPrimaryLineData] = useState([]);
-    const [dtData, setdtData] = useState([]);
-    const [slData, setSlData] = useState([]);
-    const [consumerData, setConsumerData] = useState([]);
+    
     const [showRealTimeLoc, setRealTimeLoc] = useState(false);
 
     // CENTER MAP POSITION
     const position = [12.102462, 120.031814];
 
-    // SOCKET URL
-    const socketUrl = "http://127.0.0.1:8000/ws/mapdata";
+ 
+    const {map} = useWS();
+    const mapData = map; // safe optional chaining
 
-    // WEBSOCKET REPONSE
-    const { lastJsonMessage } = useWebSocket(
-        socketUrl
-    );
-
-    // SET LATESTS MAPS DATA SENDS BY WEBSOCKET
-    useEffect(() => {
-        const update_mapdata = async () => {
-            setSubstationData(lastJsonMessage.features[0].substation)
-            setPrimaryLineData(lastJsonMessage.features[1].primary_lines)
-            setdtData(lastJsonMessage.features[2].distribtion_transformer)
-            setSlData(lastJsonMessage.features[3].secondary_line)
-            setConsumerData(lastJsonMessage.features[4].consumer)
-        }
-        if (!lastJsonMessage) return;
-
-        switch (lastJsonMessage.type) {
-            case "FeatureCollection":
-                update_mapdata()
-                break;
-
-        }
-    }, [lastJsonMessage])
+    
 
     // TOGGLE REALTIME POSITION
     const showRealtime = () => {
         setRealTimeLoc(!showRealTimeLoc)
     }
+    console.log(mapData)
     return (
-        <Box sx={{width: "100%", height: "100%", p: 0}}>
-            <RealtimeButton showRealtime={showRealtime} showRealTimeLoc={showRealTimeLoc} />
-            <MapContainer center={position} zoom={9} scrollWheelZoom={true} style={{ height: "100%", width: "100%", borderRadius: 30}}>
+        <Box sx={{
+            height: "100vh", width: "100vw", display: "flex", justifyContent: "center",
+            marginTop: {
+                sx: 5,
+                sm: 5,
+                md: 10
+            }
+        }}>
+            <MapContainer center={position} zoom={9} scrollWheelZoom={true} style={{ marginTop: 10, marginBottom: 10, height: "80%", width: "90%" , borderRadius: 20 }}>
+                <RealtimeButton showRealtime={showRealtime} showRealTimeLoc={showRealTimeLoc} />
                 <TileLayer
                     attribution='&copy; <a href="https://carto.com/attributions">CARTO / OpenStreetMap</a>'
                     url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
-
                 />
                 <LayersControl position="topleft">
                     <LayersControl.Overlay name="Substation" checked>
                         <LayerGroup>
                             {/* SUBSTATION DATA */}
-                            {substationData && substationData.map((m) => (
+                            {mapData.substationData && mapData.substationData.map((m) => (
                                 <SubstationMarker
                                     key={m.id}
                                     isactive={m.properties.isactive}
@@ -86,7 +67,7 @@ function Mainmap() {
                     <LayersControl.Overlay name="Primary Line" checked>
                         <LayerGroup>
                             {/* PRIMARY LINE DATA */}
-                            {primaryLineData && primaryLineData.map((pl) => (
+                            {mapData.primaryLineData && mapData.primaryLineData.map((pl) => (
                                 <Polyline
                                     key={pl.id}
                                     eventHandlers={{ mouseover: () => console.log("Primary Lines") }}
@@ -113,12 +94,12 @@ function Mainmap() {
                     <LayersControl.Overlay name="Transformer" checked>
                         <LayerGroup>
                             {/* CLUSTER GROUP FOR TRANSFORMER DATA */}
-                            {dtData &&
+                            {mapData.dtData &&
                                 <MarkerClusterGroup
                                     spiderfyOnMaxZoom={true}
 
                                 >
-                                    {dtData.map((dt) => (
+                                    {mapData.dtData.map((dt) => (
                                         <TransformerGroup
                                             key={dt.id}
                                             coordinates={dt.geometry.coordinates}
@@ -140,7 +121,7 @@ function Mainmap() {
                     <LayersControl.Overlay name="Secondary Line">
                         {/* SECONDARY LINE */}
                         <LayerGroup>
-                            {slData && slData.map((sl) => (
+                            {mapData.slData && mapData.slData.map((sl) => (
                                 <SecondaryLine
                                     key={sl.id}
                                     coordinates={sl.geometry.coordinates}
@@ -154,13 +135,13 @@ function Mainmap() {
                     <LayersControl.Overlay name="Consumer Meter">
                         {/* Consumer */}
                         <LayerGroup>
-                            {consumerData && <MarkerClusterGroup
+                            {mapData.consumerData && <MarkerClusterGroup
                                 disableClusteringAtZoom={18}  // number
                                 showCoverageOnHover={false}   // optional
                                 chunkedLoading={true}
 
                             >
-                                {consumerData.map((c) => (
+                                {mapData.consumerData.map((c) => (
                                     <ConsumerMarker
                                         key={c.id}
                                         coordinates={c.geometry.coordinates}

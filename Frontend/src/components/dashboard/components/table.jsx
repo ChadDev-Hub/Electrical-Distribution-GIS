@@ -47,54 +47,14 @@ function InactiveTable(props) {
     console.log(props.inactiveConsumer)
     return (
         <Paper sx={{ height: 400, maxWidth:"1200px", width:"1000px"}}>
-            {props.inactiveConsumer && <DataGrid
+            <DataGrid
                 checkboxSelection
                 autoPageSize ={true}
-                rows={props.inactiveConsumer}
-                columns={columName} />
-            }
+                rows={props.inactiveConsumer ?? []}
+                columns={columName}
+                loading={props.loading}/>
+            
         </Paper>
-        // <TableContainer>
-        //     <Table sx={{ minWidth: 650 }} aria-label="simple table">
-        //         <TableHead>
-        //             <TableRow>
-        //                 {columName.map((col, index)=>
-        //                 <TableCell key={index}>
-        //                     {col}
-        //                 </TableCell>)}
-        //             </TableRow>
-        //         </TableHead>
-        //         <TableBody>
-        //             {
-        //              props.inactiveConsumer &&  props.inactiveConsumer.map((cons, index)=>(
-        //                     <TableRow key={index}>
-        //                         <TableCell>
-        //                             {cons.account_no}
-        //                         </TableCell>
-        //                         <TableCell>
-        //                             {cons.consumer_name}
-        //                         </TableCell>
-        //                         <TableCell>
-        //                             {cons.type}
-        //                         </TableCell>
-        //                         <TableCell>
-        //                             {cons.brand}
-        //                         </TableCell>
-        //                         <TableCell>
-        //                             {cons.serial_no}
-        //                         </TableCell>
-        //                         <TableCell>
-        //                             {cons.village}
-        //                         </TableCell>
-        //                         <TableCell>
-        //                             {cons.municipality}
-        //                         </TableCell>
-        //                     </TableRow>
-        //                 ))
-        //             }
-        //         </TableBody>
-        //     </Table>
-        // </TableContainer>
     )
 }
 export default InactiveTable;

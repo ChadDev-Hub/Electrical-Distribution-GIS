@@ -6,10 +6,10 @@ from ..db.sessesion import Db
 from ..db.supa_model import PrimaryLines, Substation, DistributionTransformer, SecondarLines, Consumer
 from geoalchemy2 import functions
 from geojson import Point, FeatureCollection, Feature, loads, load
-from ..sockets.ws import ConnectionManager
+from ..sockets.ws import manager
 import asyncio
 import json
-
+from .dashboard_router import get_inactive_consumer
 map_router = APIRouter()
 # ASYNC FUNCTION TO YIEL SESSION
 async def get_suppasession():
@@ -19,7 +19,7 @@ async def get_suppasession():
 supasessionDep = Depends(get_suppasession)
 
 # WEB SOCKET MANAGER
-manager = ConnectionManager()
+# manager = ConnectionManager()
 
 async def get_mapdata(supassession:AsyncSession):
     # SUBSTATION DATA
@@ -238,7 +238,10 @@ async def update_substation(supassession:AsyncSession = supasessionDep,
     await supassession.commit()
     await supassession.refresh(substation)
     feat = await get_mapdata(supassession)
+    cons = await get_inactive_consumer(supassession)
     await manager.broadcast_json(feat)
+    await manager.broadcast_json(cons)
+    
 
 @map_router.post("/update/distribution_transformer")
 async def update_dt(supassession:AsyncSession = supasessionDep, transformer_id:str= Form(), status:bool = Form()):
@@ -253,8 +256,9 @@ async def update_dt(supassession:AsyncSession = supasessionDep, transformer_id:s
         raise HTTPException(404,str(e))
     finally:
         feat = await get_mapdata(supassession)
-        await manager.broadcast_json(feat)         
-        
+        cons = await get_inactive_consumer(supassession)
+        await manager.broadcast_json(feat)
+        await manager.broadcast_json(cons)
 
 
     

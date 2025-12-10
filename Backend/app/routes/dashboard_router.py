@@ -4,10 +4,11 @@ from sqlmodel import select, asc
 from sqlmodel.ext.asyncio.session import AsyncSession
 from ..db.sessesion import Db
 from ..db.supa_model import Consumer
-from ..sockets.ws import ConnectionManager
+from ..sockets.ws import manager
 import asyncio
+
 dashboard_router = APIRouter()
-dashboard_manager = ConnectionManager()
+
 
 async def get_supassesion():
     async with AsyncSession(Db().supa_engine) as session:
@@ -44,14 +45,15 @@ async def get_inactive_consumer(session:AsyncSession):
 
 @dashboard_router.websocket("/ws/dashboard")
 async def get_data(socket:WebSocket, supassession:AsyncSession = supassesiondep):
-    await dashboard_manager.connect(socket)
-    inaactive_cons = await get_inactive_consumer(supassession)
+    await manager.connect(socket)
     try:
-        await dashboard_manager.broadcast_json(inaactive_cons)
+        inaactive_cons = await get_inactive_consumer(supassession)
+        await manager.broadcast_json(inaactive_cons)
         while True:
-            await asyncio.sleep(1)
+            await asyncio.sleep(3)
 
     except WebSocketDisconnect:
-        await dashboard_manager.disconnect(socket)
+        await manager.disconnect(socket)
+        
 
     
