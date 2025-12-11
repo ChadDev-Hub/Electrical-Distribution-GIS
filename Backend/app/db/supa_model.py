@@ -40,7 +40,7 @@ class Substation(SQLModel, table=True):
     isactive: Optional[bool] = Field(sa_column=Column(name="isactive", type_=Boolean, default=None))
     franchise_area:Optional[FranchiseArea] = Relationship(back_populates="substation")
     nodes: List["Nodes"] = Relationship(back_populates="substation")
-  
+    # primary_lines: list["PrimaryLines"] = Relationship(back_populates="substation")
     
 # FUNCTION TO UPDATE FRANCHISE AREA ID
 update_franchise_area_id = DDL(
@@ -255,7 +255,6 @@ class PrimaryLines(SQLModel, table=True):
     isactive: Optional[bool] = Field(default=False, sa_column=Column(name="isactive", type_=Boolean))
     municipality: Optional[str] = Field(default=None, sa_column=Column(name="municipality", type_=Text))
     nodes: Optional[Nodes] = Relationship(back_populates="primary_lines")
-
 # TRIGGER FUNCTION FOR PRIMARY LINE
 update_primary_line= DDL(
     """

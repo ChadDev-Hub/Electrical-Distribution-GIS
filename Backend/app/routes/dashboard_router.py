@@ -1,9 +1,9 @@
 from fastapi import APIRouter, Depends, WebSocket, WebSocketDisconnect
 from fastapi.responses import JSONResponse
-from sqlmodel import select, asc
+from sqlmodel import select, asc, func, case
 from sqlmodel.ext.asyncio.session import AsyncSession
 from ..db.sessesion import Db
-from ..db.supa_model import Consumer
+from ..db.supa_model import Consumer, Substation, PrimaryLines
 from ..sockets.ws import manager
 import asyncio
 
@@ -15,15 +15,16 @@ async def get_supassesion():
         try:
             yield session
             await session.commit()
-        except:
-            await session.rollback()
+        except Exception as e:
+            print(e)
+            raise
         finally:
             await session.close()
 
 supassesiondep = Depends(get_supassesion)
 
 async def get_inactive_consumer(session:AsyncSession):
-    
+    # GET ALL CONSUMER WITH INACTIVE CONNECTION
     stmt = await session.exec(select(Consumer).where(Consumer.isactive == False).order_by(asc(Consumer.id)))
     consumer_data = [
             dict(
@@ -32,14 +33,46 @@ async def get_inactive_consumer(session:AsyncSession):
                 consumer_name = val.consumer_name,
                 type = val.consumer_type,
                 brand = val.meter_brand,
-                serial_no = val.meter_number,\
+                serial_no = val.meter_number,
                 village = val.village,
                 municipality = val.municipality
                 ) for val in
         stmt.all()]
+    
+    # GET THE TOTAL CONSUMER 
+    total_consumer_stmt = await session.exec(select(Consumer.isactive,func.count(Consumer.isactive).label("Count")).group_by(Consumer.isactive))
+    total_consumer = [
+        {
+            "isactive": isactive,
+            "count": count
+        } for isactive, count in
+        total_consumer_stmt.fetchall()]
+    
+    # TOTAL PRIMARY LINE LENGTH BY PHASING AND BY SUBSTATION
+    total_pl_length_stmt = await session.exec(select(Substation.generator_name,
+                                                     func.sum(case((func.char_length(PrimaryLines.phasing)==2,PrimaryLines.length),else_=0)).label("single_phase"),
+                                                     func.sum(case((func.char_length(PrimaryLines.phasing) == 3, PrimaryLines.length), else_=0)).label("v_phase"),
+                                                     func.sum(case((func.char_length(PrimaryLines.phasing) == 4, PrimaryLines.length), else_=0)).label("three_phase"))
+                                                     .join(Substation, Substation.id == PrimaryLines.substation_id)
+                                                     .group_by(Substation.generator_name)
+                                                     .order_by(Substation.generator_name))
+    primary_line_length = [
+        {
+            "substation": substation,
+            "primary_line_length" : {
+                "single_phase": float(single_phase),
+                "v_phase": float(v_phase),
+                "three_phase":float(three_phase)
+            }  
+        }for 
+        substation, single_phase, v_phase, three_phase in total_pl_length_stmt.fetchall()]
+    
+
     return {
         "type": "dashboard",
-        "inactive_consumer": consumer_data 
+        "inactive_consumer": consumer_data,
+        "total_consumer": total_consumer,
+        "primary_line_length": primary_line_length
     }
 
 
@@ -57,3 +90,7 @@ async def get_data(socket:WebSocket, supassession:AsyncSession = supassesiondep)
         
 
     
+@dashboard_router.get("/dashboard/data")
+async def get_dashboard_data(supassession:AsyncSession= supassesiondep):
+    data = await get_inactive_consumer(supassession)
+    return JSONResponse(data)
