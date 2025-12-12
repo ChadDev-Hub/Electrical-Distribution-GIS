@@ -4,7 +4,9 @@ import{WSContext} from "./webSocketContext"
 
 export function WebSocketProvider({children}){
     const [dasBoardData, setDashBoardData] = useState({
-        inactiveConsumer:[]
+        inactiveConsumer:[],
+        totalConsumer:[],
+        plLength:[]
     })
 
     const [mapData, setMapData] = useState({
@@ -44,7 +46,9 @@ export function WebSocketProvider({children}){
     useEffect(()=>{
         const dashBoadData = async()=>{
             setDashBoardData({
-                inactiveConsumer: dashBoardMsg.inactive_consumer
+                inactiveConsumer: dashBoardMsg.inactive_consumer,
+                totalConsumer: dashBoardMsg.total_consumer,
+                plLength: dashBoardMsg.primary_line_length
             }) 
         }
         if (!dashBoardMsg) {
@@ -58,6 +62,7 @@ export function WebSocketProvider({children}){
                 break;
         }
     },[dashBoardMsg])
+
     const values ={
         map: mapData,
         dashboard: dasBoardData

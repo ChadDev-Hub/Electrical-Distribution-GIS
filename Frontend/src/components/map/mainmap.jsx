@@ -118,7 +118,7 @@ function Mainmap() {
                             }
                         </LayerGroup>
                     </LayersControl.Overlay>
-                    <LayersControl.Overlay name="Secondary Line">
+                    <LayersControl.Overlay name="Secondary Line" checked>
                         {/* SECONDARY LINE */}
                         <LayerGroup>
                             {mapData.slData && mapData.slData.map((sl) => (

@@ -376,7 +376,8 @@ CREATE OR REPLACE FUNCTION gis.dt_switch_function()
 RETURNS TRIGGER AS $$
 BEGIN
     UPDATE gis.secondary_lines as sl
-    set isactive = new.isactive
+    set isactive = new.isactive,
+    phasing = new.secondary_phasing
     WHERE new.transformer_id = sl.dt_id;
 RETURN NEW;
 END
@@ -690,7 +691,8 @@ sl_after_function = DDL(
     RETURNS TRIGGER AS $$
     BEGIN
     UPDATE gis.service_drop as sd 
-    set isactive = new.isactive
+    set isactive = new.isactive,
+    phasing = new.phasing
     where sd.secondary_line_id = new.id;
     RETURN NEW;
     END;

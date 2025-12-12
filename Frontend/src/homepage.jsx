@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import Mainmap from "./components/map/mainmap";
+import { useTheme } from "@mui/material/styles";
 import {
   AppBar,
   Toolbar,
@@ -7,8 +7,6 @@ import {
   Typography,
   Drawer,
   Box,
-  CssBaseline,
-  useMediaQuery,
   Divider,
   List,
   ListItemButton,
@@ -16,13 +14,11 @@ import {
   Stack
 } from "@mui/material";
 import MenuIcon from "@mui/icons-material/Menu";
-import { ThemeProvider, createTheme } from "@mui/material/styles";
 import { Outlet, useNavigate } from "react-router-dom";
-function HomePage() {
+function HomePage(props) {
+  const theme = useTheme();
   const navigate = useNavigate()
   const [open, setOpen] = useState(false);
-  const [darkMode, setDarkMode] = useState(true);
-  const isMobile = useMediaQuery("(max-width: 768px)");
   const menuButon = [{
     "Button": "Map",
     "ref": "/homepage/map"
@@ -30,22 +26,7 @@ function HomePage() {
   {
     "Button": "DashBoard",
     "ref" : '/homepage/dashboard'
-  }
-  ]
-  const theme = createTheme({
-    palette: {
-      mode: darkMode ? "dark" : "light",
-      primary: {
-        main: darkMode ? "#90caf9" : "#1976d2",
-      },
-      background: {
-        default: darkMode ? "#121212" : "#f4f6fb",
-        paper: darkMode ? "#1a1a1c" : "#ffffff",
-      },
-    },
-    shape: { borderRadius: 16 },
-    typography: { fontFamily: 'Roboto, sans-serif' },
-  });
+  }]
 
 
   const handleMenuButtonClick = (event) =>{
@@ -57,18 +38,16 @@ function HomePage() {
       }
   }
   return (
-    <ThemeProvider theme={theme}>
-      <CssBaseline />
-
+    <>
       {/* NAVBAR (desktop only) */}
-      {!isMobile && (
+      {!props.isMobile && (
         <AppBar
           position="fixed"
           elevation={3}
           sx={{
             backdropFilter: "blur(14px)",
-            background: darkMode ? "rgba(18,18,18,0.85)" : "rgba(255,255,255,0.85)",
-            borderBottom: darkMode ? "1px solid #333" : "1px solid #e0e0e0",
+            background: props.darkMode ? "rgba(18,18,18,0.85)" : "rgba(255,255,255,0.85)",
+            borderBottom: props.darkMode ? "1px solid #333" : "1px solid #e0e0e0",
           }}
         >
           <Toolbar sx={{ display: "flex", justifyContent: "space-between" }}>
@@ -87,7 +66,7 @@ function HomePage() {
       )}
 
       {/* MOBILE BOTTOM NAV */}
-      {isMobile && (
+      {props.isMobile && (
         <Box
           sx={{
             mx: 2,
@@ -99,8 +78,8 @@ function HomePage() {
             display: "flex",
             justifyContent: "center",
             py: 1.5,
-            background: darkMode ? "#1212122c" : "#bebebe56",
-            borderTop: darkMode ? "1px solid #5a5454ff" : "1px solid #585858ff",
+            background: props.darkMode ? "#1212122c" : "#bebebe56",
+            borderTop: props.darkMode ? "1px solid #5a5454ff" : "1px solid #585858ff",
             zIndex: 9999,
             borderRadius: 60
           }}
@@ -124,19 +103,19 @@ function HomePage() {
               Navigation
             </Typography>
             <IconButton
-              aria-label={darkMode ? "Switch to light mode" : "Switch to dark mode"}
-              onClick={() => setDarkMode(!darkMode)}
+              aria-label={props.darkMode ? "Switch to light mode" : "Switch to dark mode"}
+              onClick={props.switchTheme}
               sx={{
 
                 position: "flex",
                 justifySelf: "center",
-                background: darkMode ? "#333" : "#f0f0f0",
+                background: props.darkMode ? "#333" : "#f0f0f0",
                 transition: "0.3s ease",
                 fontSize: 20,
 
               }}
             >
-              {darkMode ? "🌙" : "☀️"}
+              {props.darkMode ? "🌙" : "☀️"}
             </IconButton>
           </Stack>
           <Divider sx={{ mb: 2, mt: 2 }} />
@@ -149,10 +128,10 @@ function HomePage() {
           </List>
         </Box>
       </Drawer>
-
+      
       {/* MAIN CONTENT */}
             <Outlet/>
-    </ThemeProvider>
+    </>
   );
 }
 

@@ -1,9 +1,9 @@
 from fastapi import APIRouter, Depends, WebSocket, WebSocketDisconnect
 from fastapi.responses import JSONResponse
-from sqlmodel import select, asc, func, case
+from sqlmodel import select, asc, func, case, not_, and_
 from sqlmodel.ext.asyncio.session import AsyncSession
 from ..db.sessesion import Db
-from ..db.supa_model import Consumer, Substation, PrimaryLines
+from ..db.supa_model import Consumer, Substation, PrimaryLines, SecondarLines, DistributionTransformer
 from ..sockets.ws import manager
 import asyncio
 
@@ -40,13 +40,30 @@ async def get_inactive_consumer(session:AsyncSession):
         stmt.all()]
     
     # GET THE TOTAL CONSUMER 
-    total_consumer_stmt = await session.exec(select(Consumer.isactive,func.count(Consumer.isactive).label("Count")).group_by(Consumer.isactive))
+    total_consumer_stmt = await session.exec(
+        select(
+            func.sum(case((Consumer.isactive, 1), else_=0)).label("active"),
+            func.sum(case((not_(Consumer.isactive), 1), else_=0)).label("inactive"),
+            func.count().label("total")
+            )
+     )
+    row = total_consumer_stmt.fetchall()
+    active, inactive, total =row[0]
     total_consumer = [
+        {   "label": "Active",
+            "count": active,
+            "color": "green"
+        },
+        { "label": "Inactive",
+           "count": inactive,
+           "color": "red"
+        },
         {
-            "isactive": isactive,
-            "count": count
-        } for isactive, count in
-        total_consumer_stmt.fetchall()]
+           "label": "Total",
+           "count":  total,
+           "color": "blue"
+        }
+        ]
     
     # TOTAL PRIMARY LINE LENGTH BY PHASING AND BY SUBSTATION
     total_pl_length_stmt = await session.exec(select(Substation.generator_name,
@@ -58,21 +75,89 @@ async def get_inactive_consumer(session:AsyncSession):
                                                      .order_by(Substation.generator_name))
     primary_line_length = [
         {
-            "substation": substation,
-            "primary_line_length" : {
+          
+                "substation": substation,
                 "single_phase": float(single_phase),
                 "v_phase": float(v_phase),
-                "three_phase":float(three_phase)
-            }  
+                "three_phase": float(three_phase)
+          
         }for 
         substation, single_phase, v_phase, three_phase in total_pl_length_stmt.fetchall()]
     
+    sl_stmt = await session.exec(select(
+                                Substation.generator_name,
+                                func.sum(case((SecondarLines.description == "UNDER-BUILT", SecondarLines.length_meters), else_=0)).label("ub_total"),
+                                func.sum(case((SecondarLines.description == "OPEN-SECONDARY", SecondarLines.length_meters), else_=0)).label("os_total"),
+                                func.sum(case((and_(SecondarLines.description == "UNDER-BUILT", func.char_length(SecondarLines.phasing) == 2), SecondarLines.length_meters), else_=0)).label("ub_single_phase"),
+                                func.sum(case((and_(SecondarLines.description == "UNDER-BUILT", func.char_length(SecondarLines.phasing) == 3), SecondarLines.length_meters), else_=0)).label("ub_vphase"),
+                                func.sum(case((and_(SecondarLines.description == "UNDER-BUILT", func.char_length(SecondarLines.phasing) == 4), SecondarLines.length_meters), else_=0)).label("ub_three_phase"),
+                                func.sum(case((and_(SecondarLines.description == "OPEN-SECONDARY",func.char_length(SecondarLines.phasing) == 2), SecondarLines.length_meters), else_=0)).label("os_single_phase"),
+                                func.sum(case((and_(SecondarLines.description == "OPEN-SECONDARY",func.char_length(SecondarLines.phasing) == 3), SecondarLines.length_meters), else_=0)).label("os_v_phase"),
+                                func.sum(case((and_(SecondarLines.description == "OPEN-SECONDARY",func.char_length(SecondarLines.phasing) == 4), SecondarLines.length_meters), else_=0)).label("os_three_phase"))
+                                 .join(DistributionTransformer,SecondarLines.dt_id == DistributionTransformer.transformer_id)
+                                 .join(Substation, Substation.id == DistributionTransformer.substation_id)
+                                 .group_by(Substation.generator_name))
+    sl_data = [{
+        "substation_id": substation_id,
+        "series":[
 
+            {
+                "innerRadius": 0,
+                "outerRadius": 80,
+                "data": [{
+                    "label" : "Under Built Total",
+                    "value" : float(ub_total),
+                    "color": "yellow"},
+                    {"label": "Open Secondary Total",
+                    "value": float(os_total),
+                    "color": "orange"}
+                    ],
+                "highlightScope": { "fade": 'global', "highlight": 'item' }
+            },
+            {
+                "id": 'outer',
+                "innerRadius": 100,
+                "outerRadius": 120,
+                "data":[
+            {
+            "label": "Ub Single Phase",
+            "value": float(ub_single),
+            "color":"yellow"
+            },
+            {
+            "label": "Ub V Phase",
+            "value": float(ub_v),
+            "color":"yellow"
+            },
+            
+            {
+            "label": "Ub three Phase",
+            "value": float(ub_three),
+            "color":"yellow"
+            },
+            {
+                "label": "Os Single Phase",
+                "value": float(os_single),
+                "color":"orange"
+            },
+            {
+                "label": "Os V Phase",
+                "value": float(os_v),
+                "color":"orange"
+            },
+            {
+                "label": "OS Three",
+                "value": float(os_three),
+                "color":"orange"
+            }],
+            "highlightScope": { "fade": 'global', "highlight": 'item' }}
+        ]} for substation_id,ub_total,os_total, ub_single, ub_v, ub_three, os_single, os_v, os_three in sl_stmt.fetchall()]
     return {
         "type": "dashboard",
         "inactive_consumer": consumer_data,
         "total_consumer": total_consumer,
-        "primary_line_length": primary_line_length
+        "primary_line_length": primary_line_length,
+        "secondary_line_length": sl_data
     }
 
 

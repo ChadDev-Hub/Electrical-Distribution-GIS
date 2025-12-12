@@ -1,58 +1,78 @@
 import React from "react";
-import Table from '@mui/material/Table';
-import TableBody from '@mui/material/TableBody';
-import TableCell from '@mui/material/TableCell';
-import TableContainer from '@mui/material/TableContainer';
-import TableHead from '@mui/material/TableHead';
-import TableRow from '@mui/material/TableRow';
-import Paper from '@mui/material/Paper';
 import { DataGrid } from '@mui/x-data-grid';
 import Box from '@mui/material/Box';
+import { Typography, Paper } from "@mui/material";
 function InactiveTable(props) {
     const columName = [
         {
             "field": "id",
-            "headerName": "id"
+            "headerName": "id",
+            "headerAlign":"center",
+            "width": 80
         },
         {
             "field": "account_no",
             "headerName": "Account #",
+            "headerAlign":"center",
+            "width": 150
         },
         {
             "field": "consumer_name",
-            "headerName": "Consumer Name"
+            "headerName": "Consumer Name",
+            "headerAlign":"center",
+            "width": 150
         },
         {
             "field": "type",
-            "headerName": "Type"
+            "headerName": "Type",
+            "headerAlign":"center",
+            "width": 150
         },
         {
             "field": "brand",
-            "headerName": "Brand"
+            "headerName": "Brand",
+            "headerAlign":"center",
+            "width": 150
         },
         {
             "field": "serial_no",
-            "headerName": "Serial Number"
+            "headerName": "Serial Number",
+            "headerAlign":"center",
+            "width": 150
         },
         {
             "field": "village",
-            "headerName": "Village"
+            "headerName": "Village",
+            "headerAlign":"center",
+            "width": 150
 
         },
         {
             "field": "municipality",
-            "headerName": "Municipality"
+            "headerName": "Municipality",
+            "headerAlign":"center",
+            "width": 150
         }
     ]
     console.log(props.inactiveConsumer)
     return (
-        <Paper sx={{ height: 400, maxWidth:"1200px", width:"1000px"}}>
-            <DataGrid
+        <Paper sx={{ 
+            height:props.isMobile?300 :600,
+            width:"100%",
+            border:"1px solid grey", 
+            display:"flex", 
+            flexDirection:"column"}}>
+            <Typography sx={{p:2, fontWeight:"bold"}}>Inactive Consumer Table</Typography>
+            <Box sx={{flex:1, minHeight: 0}}>
+                <DataGrid
+                sx={{height:"100%"}}
                 checkboxSelection
                 autoPageSize ={true}
                 rows={props.inactiveConsumer ?? []}
                 columns={columName}
                 loading={props.loading}/>
+
+            </Box>
             
         </Paper>
     )
