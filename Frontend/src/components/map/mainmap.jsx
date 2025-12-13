@@ -3,7 +3,7 @@ import { MapContainer, TileLayer, Polyline, Marker, Popup, LayerGroup, LayersCon
 import Button from '@mui/material/Button';
 import ElectricBoltIcon from '@mui/icons-material/ElectricBolt';
 import SubstationMarker from "./components/substation";
-import { Container, Stack, Switch, Zoom, Box } from "@mui/material";
+import { Container, Stack, Switch, Zoom, Box, Grid } from "@mui/material";
 import MarkerClusterGroup from 'react-leaflet-cluster';
 import L from 'leaflet';
 import TransformerGroup from "./components/transformergroup";
@@ -12,7 +12,7 @@ import RealTimeMarker from "./components/realtimeMarker";
 import SecondaryLine from "./components/secondaryLine";
 import ConsumerMarker from "./components/consumer";
 import { useWS } from "../webSocketContext";
-function Mainmap() {
+function Mainmap(props) {
     
     const [showRealTimeLoc, setRealTimeLoc] = useState(false);
 
@@ -31,19 +31,14 @@ function Mainmap() {
     }
     console.log(mapData)
     return (
-        <Box sx={{
-            height: "100vh", width: "100vw", display: "flex", justifyContent: "center",
-            marginTop: {
-                sx: 5,
-                sm: 5,
-                md: 10
-            }
-        }}>
-            <MapContainer center={position} zoom={9} scrollWheelZoom={true} style={{ marginTop: 10, marginBottom: 10, height: "80%", width: "90%" , borderRadius: 20 }}>
+        
+        <Grid container sx={{height:"100vh", weight:"100vh"}}>
+            <Grid size={12} sx={{p:props.isMobile? 2: 10, paddingBottom:props.isMobile? 12: 3}}>
+                <MapContainer center={position} zoom={9} scrollWheelZoom={true} style={{height: "100%", width: "100%" , borderRadius: 20 }}>
                 <RealtimeButton showRealtime={showRealtime} showRealTimeLoc={showRealTimeLoc} />
                 <TileLayer
                     attribution='&copy; <a href="https://carto.com/attributions">CARTO / OpenStreetMap</a>'
-                    url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
+                    url={props.darkMode? "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png" : "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"}
                 />
                 <LayersControl position="topleft">
                     <LayersControl.Overlay name="Substation" checked>
@@ -164,7 +159,10 @@ function Mainmap() {
 
                 {showRealTimeLoc && <RealTimeMarker />}
             </MapContainer>
-        </Box>
+
+            </Grid>
+             
+        </Grid>
     )
 }
 

@@ -4,8 +4,8 @@ import { Paper, Stack, Typography } from "@mui/material";
 function TotalConsumer({ totalConsumer, isMobile }) {
     return (
         <Stack direction="row" justifyContent="space-between" gap={2}>
-            {totalConsumer && totalConsumer.map((c) => (
-                <Paper sx={{ width: "100%", height: isMobile ? 50 : 80, p: 1, border:"1px solid grey" }}>
+            {totalConsumer && totalConsumer.map((c, index) => (
+                <Paper key={index} sx={{ width: "100%", height: isMobile ? 70 : 80, p: 1, border:"1px solid grey" }}>
                     <Stack direction="row">
                         <Typography variant="h6" sx={{color:c.color}}>
                             {c.label}

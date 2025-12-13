@@ -12,6 +12,7 @@ function App() {
   const isMobile = useMediaQuery("(max-width: 768px)");
   const [darkMode, setDarkMode] = useState(true);
   const theme = createTheme({
+    
       palette: {
         mode: darkMode ? "dark" : "light",
         primary: {
@@ -38,7 +39,7 @@ function App() {
       <BrowserRouter>
         <Routes>
           <Route path='/homepage/'  element={<HomePage darkMode={darkMode} switchTheme={handleThemeSwitch}  isMobile={isMobile}/>}>
-            <Route path='map' element={<Mainmap/>} />
+            <Route path='map' element={<Mainmap darkMode={darkMode}  isMobile={isMobile}/>} />
             <Route path='dashboard' element={<DashBoard isMobile={isMobile}/>}/>
           </Route>
         </Routes>

@@ -8,7 +8,6 @@ from geoalchemy2 import functions
 from geojson import Point, FeatureCollection, Feature, loads, load
 from ..sockets.ws import manager
 import asyncio
-import json
 from .dashboard_router import get_inactive_consumer
 map_router = APIRouter()
 # ASYNC FUNCTION TO YIEL SESSION

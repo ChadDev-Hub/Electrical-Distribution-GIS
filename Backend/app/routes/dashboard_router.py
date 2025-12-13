@@ -73,14 +73,39 @@ async def get_inactive_consumer(session:AsyncSession):
                                                      .join(Substation, Substation.id == PrimaryLines.substation_id)
                                                      .group_by(Substation.generator_name)
                                                      .order_by(Substation.generator_name))
+    # DATA STRUCTURE FOR PIE CHART
     primary_line_length = [
         {
           
                 "substation": substation,
-                "single_phase": float(single_phase),
-                "v_phase": float(v_phase),
-                "three_phase": float(three_phase)
-          
+                "series":[{
+                    "innerRadius":20,
+                    "highlightScope":{
+                        "fade": 'global',
+                        "highlight":"item"
+                    },
+                    "faded":{
+                        "innerRadius":30,
+                        "additionalRadius": -30,
+                        "color": 'grey'
+                             },
+                    "data":[
+                        {
+                                "label" : "Single Phase",
+                                "value": float(single_phase),
+                                "color": "red"
+                        },
+                        {
+                            "label": "V Phase",
+                            "value": float(v_phase),
+                            "color": "blue"
+                        },
+                        {
+                            "label": "Three Phase",
+                            "value": float(three_phase),
+                            "color": "green"
+                        }]
+                }]
         }for 
         substation, single_phase, v_phase, three_phase in total_pl_length_stmt.fetchall()]
     
@@ -102,8 +127,8 @@ async def get_inactive_consumer(session:AsyncSession):
         "series":[
 
             {
-                "innerRadius": 0,
-                "outerRadius": 80,
+                "innerRadius": 15,
+                "outerRadius": 50,
                 "data": [{
                     "label" : "Under Built Total",
                     "value" : float(ub_total),
@@ -116,8 +141,8 @@ async def get_inactive_consumer(session:AsyncSession):
             },
             {
                 "id": 'outer',
-                "innerRadius": 100,
-                "outerRadius": 120,
+                "innerRadius": 50,
+                "outerRadius": 100,
                 "data":[
             {
             "label": "Ub Single Phase",
@@ -152,6 +177,7 @@ async def get_inactive_consumer(session:AsyncSession):
             }],
             "highlightScope": { "fade": 'global', "highlight": 'item' }}
         ]} for substation_id,ub_total,os_total, ub_single, ub_v, ub_three, os_single, os_v, os_three in sl_stmt.fetchall()]
+    
     return {
         "type": "dashboard",
         "inactive_consumer": consumer_data,

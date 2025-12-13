@@ -10,11 +10,11 @@ import CardMedia from '@mui/material/CardMedia';
 import Typography from '@mui/material/Typography';
 function ConsumerMarker(props){
     const ElectricMeter = L.divIcon({
-        html: renderToString(<ElectricMeterIcon style={{color: props.status ? "green": "grey"}} />),
+        html: renderToString(<ElectricMeterIcon style={{color: props.status ? "green": "grey", width:15, height:15}} />),
         className:""
     })
     return (
-        <Marker position={[props.coordinates[1], props.coordinates[0]]} icon={ElectricMeter}>
+        <Marker position={[props.coordinates[1], props.coordinates[0]]}  icon={ElectricMeter}>
             <Popup>
                 <Card>
                     <CardContent>

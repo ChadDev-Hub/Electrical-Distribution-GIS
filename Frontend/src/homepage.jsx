@@ -15,6 +15,8 @@ import {
 } from "@mui/material";
 import MenuIcon from "@mui/icons-material/Menu";
 import { Outlet, useNavigate } from "react-router-dom";
+import DarkModeIcon from '@mui/icons-material/DarkMode';
+import LightModeIcon from '@mui/icons-material/LightMode';
 function HomePage(props) {
   const theme = useTheme();
   const navigate = useNavigate()
@@ -103,19 +105,20 @@ function HomePage(props) {
               Navigation
             </Typography>
             <IconButton
+              
               aria-label={props.darkMode ? "Switch to light mode" : "Switch to dark mode"}
               onClick={props.switchTheme}
               sx={{
-
+                color:props.darkMode? "yellow" : "orange",
                 position: "flex",
                 justifySelf: "center",
-                background: props.darkMode ? "#333" : "#f0f0f0",
+                background: props.darkMode ? "#000000ff" : "#f0f0f0",
                 transition: "0.3s ease",
                 fontSize: 20,
 
               }}
             >
-              {props.darkMode ? "🌙" : "☀️"}
+              {props.darkMode ? <DarkModeIcon/> : <LightModeIcon/>}
             </IconButton>
           </Stack>
           <Divider sx={{ mb: 2, mt: 2 }} />

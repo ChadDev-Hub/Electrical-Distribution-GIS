@@ -1,57 +1,53 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Box, Stack } from "@mui/material";
-import { BarChart } from "@mui/x-charts";
 import InputLabel from '@mui/material/InputLabel';
 import MenuItem from '@mui/material/MenuItem';
 import FormControl from '@mui/material/FormControl';
 import Select from '@mui/material/Select';
-import { PieChart } from '@mui/x-charts/PieChart';
+import { PieChart } from "@mui/x-charts";
 import Paper from '@mui/material/Paper';
 import {Typography} from "@mui/material";
 function PrimarLineLength({plLength, isMobile}){
-    const [category, setCategory] = useState("CIPC0001")
-    const substation = plLength?.map(d=>d.substation) || []
-    const data = plLength?.filter(item=>item.substation === category)
-    const  filterData = [
-        {label: "Single Phase", value: data[0]?.single_phase},
-        {label: "V Phase", value: data[0]?.v_phase},
-        {label: "Three Phase", value: data[0]?.three_phase}
-    ]
-    console.log(filterData)
+    //  SELECTED SUBSTATION 
+    const [selected, setSelected] = useState("");
+    const substation = plLength?.map(d=>d.substation) || [];
+    const filterData = plLength?.filter(item=>item.substation === selected);
+    // FILTERING THE DATA FOR THE SELECTED SUBSTATION 
+    const setting = filterData[0]?.series ? {"series": filterData[0].series} : null;
     function handleChange(event){
-        setCategory(event.target.value)
+        setSelected(event.target.value)
     }
+    useEffect(()=>{
+        if (!selected & substation.length > 0){
+        setSelected(substation[0])}
+    },[substation, selected])
     return(
-        <Paper sx={{width:"100%", height:isMobile? "300px": "400px", border:"1px solid grey"}}>
+        <Paper sx={{width:"100%", height:isMobile? 320 : 340, border:"1px solid grey"}}>
             <Stack direction="row" justifyContent="space-between">
                 <Typography sx={{m:2, fontWeight:"bold"}}>
                 Primary Line Length (Meters)
                 </Typography>
                 <FormControl>
                 <InputLabel>Substation</InputLabel>
-                <Select
+                {substation && <Select
                 defaultValue="CIPC0001"
-                value={category}
+                value={selected}
                 label="Substation"
                 onChange={handleChange}>
-                    {substation?.map((d)=>(
-                        <MenuItem value={d}>{d}</MenuItem>
+                    {substation?.map((d, index)=>(
+                        <MenuItem key={index} value={d}>{d}</MenuItem>
                     ))}
-                </Select>
+                </Select>}
             </FormControl>
                 
             </Stack>
-            
-            <PieChart
-            height={isMobile? 200 : 300}
+            {setting && <PieChart
+            height={isMobile? 200 : 250}
             width={isMobile? 200 : 300}
             title="Primary Line Length(meters)"
-            series={[{
-                data: filterData,
-                highlightScope: { fade: 'global', highlight: 'item' },
-                faded: { innerRadius: 30, additionalRadius: -30, color: 'gray' }
-            }]}
-            />
+            {...setting}
+            hideLegend={true}
+            />}
         </Paper>
     )
 }

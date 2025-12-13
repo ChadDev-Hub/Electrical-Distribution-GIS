@@ -6,7 +6,8 @@ export function WebSocketProvider({children}){
     const [dasBoardData, setDashBoardData] = useState({
         inactiveConsumer:[],
         totalConsumer:[],
-        plLength:[]
+        plLength:[],
+        slLength:[]
     })
 
     const [mapData, setMapData] = useState({
@@ -48,7 +49,8 @@ export function WebSocketProvider({children}){
             setDashBoardData({
                 inactiveConsumer: dashBoardMsg.inactive_consumer,
                 totalConsumer: dashBoardMsg.total_consumer,
-                plLength: dashBoardMsg.primary_line_length
+                plLength: dashBoardMsg.primary_line_length,
+                slLength: dashBoardMsg.secondary_line_length
             }) 
         }
         if (!dashBoardMsg) {

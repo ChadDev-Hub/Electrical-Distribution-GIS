@@ -54,7 +54,6 @@ function InactiveTable(props) {
             "width": 150
         }
     ]
-    console.log(props.inactiveConsumer)
     return (
         <Paper sx={{ 
             height:props.isMobile?300 :600,
