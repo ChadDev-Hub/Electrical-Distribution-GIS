@@ -3,7 +3,7 @@ import { Marker, useMap, useMapEvent} from "react-leaflet";
 import BoyRoundedIcon from '@mui/icons-material/BoyRounded';
 import L from 'leaflet'
 import {renderToString } from "react-dom/server";
-function RealTimeMarker(){
+function RealTimeMarker(props){
     const [position, setPosition] = useState(null)
     const map = useMap()
     const realTimeIcon = L.divIcon({
