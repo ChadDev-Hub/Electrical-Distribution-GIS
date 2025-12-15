@@ -22,9 +22,16 @@ export function WebSocketProvider({children}){
     
         })
 
-    const {lastJsonMessage:mapMsg} = new useWebSocket(`${baseUrl}/ws/mapdata`);
+    const {lastJsonMessage:mapMsg} = useWebSocket(`${baseUrl}/ws/mapdata`,
+        {
+            shouldReconnect:()=>true
+        });
 
-    const {lastJsonMessage:dashBoardMsg} = new  useWebSocket(`${baseUrl}/ws/dashboard`);
+    const {lastJsonMessage:dashBoardMsg} = useWebSocket(`${baseUrl}/ws/dashboard`,
+        {
+            shouldReconnect:()=>true
+        }
+    );
     
 
     // USE EFFECT FOR MAP DATA
