@@ -188,19 +188,18 @@ async def get_inactive_consumer(session:AsyncSession):
 
 
 @dashboard_router.websocket("/ws/dashboard")
-async def get_data(socket:WebSocket, supassession:AsyncSession = supassesiondep):
-    await manager.connect(socket)
+async def get_data(socket:WebSocket):
+    await socket.accept()
     try:
-        inaactive_cons = await get_inactive_consumer(supassession)
-        await manager.broadcast_json(inaactive_cons)
+        async with AsyncSession(Db().supa_engine) as session:
+            inaactive_cons = await get_inactive_consumer(session)
+        await socket.send_json(inaactive_cons)
+        await manager.add(socket)
         while True:
-            await asyncio.sleep(3)
-
+            await asyncio.sleep(10)
     except WebSocketDisconnect:
         await manager.disconnect(socket)
         
-
-    
 @dashboard_router.get("/dashboard/data")
 async def get_dashboard_data(supassession:AsyncSession= supassesiondep):
     data = await get_inactive_consumer(supassession)

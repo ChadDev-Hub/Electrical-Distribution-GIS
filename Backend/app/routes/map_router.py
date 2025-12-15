@@ -227,18 +227,21 @@ async def get_data(session:AsyncSession = supasessionDep):
 
 # REAL-TIME MAP WEBSOCKETE DATA
 @map_router.websocket("/ws/mapdata")
-async def get_latest_substation(websocket:WebSocket, supasession:AsyncSession = supasessionDep):
+async def get_latest_substation(websocket:WebSocket):
     await websocket.accept()
     origin = websocket.headers.get("origin")
     if origin != ORIGIN:
+        await websocket.close()
         return
-    await manager.add(websocket)
-    # INITIAL DATA 
-    feat = await get_mapdata(supasession)
-    await manager.broadcast_json(feat)
+    # INITIAL DATA
     try:
+        async with AsyncSession(Db().supa_engine) as session:
+            feat = await get_mapdata(session)
+
+        await websocket.send_json(feat)
+        await manager.add(websocket)
         while True:
-            await asyncio.sleep(1)
+            await asyncio.sleep(10)
     except WebSocketDisconnect:
         manager.disconnect(websocket)
    
@@ -257,7 +260,6 @@ async def update_substation(supassession:AsyncSession = supasessionDep,
     cons = await get_inactive_consumer(supassession)
     await manager.broadcast_json(feat)
     await manager.broadcast_json(cons)
-    
 
 @map_router.post("/update/distribution_transformer")
 async def update_dt(supassession:AsyncSession = supasessionDep, transformer_id:str= Form(), status:bool = Form()):
@@ -269,12 +271,13 @@ async def update_dt(supassession:AsyncSession = supasessionDep, transformer_id:s
         await supassession.commit()
         await supassession.refresh(transformer)
     except Exception as e:
+        await supassession.rollback()
         raise HTTPException(404,str(e))
-    finally:
-        feat = await get_mapdata(supassession)
-        cons = await get_inactive_consumer(supassession)
-        await manager.broadcast_json(feat)
-        await manager.broadcast_json(cons)
-
+    
+    feat = await get_mapdata(supassession)
+    cons = await get_inactive_consumer(supassession)
+    await manager.broadcast_json(feat)
+    await manager.broadcast_json(cons)
+    return {"status": "complete"}
 
     
