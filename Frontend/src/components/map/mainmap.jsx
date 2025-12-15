@@ -14,7 +14,6 @@ import ConsumerMarker from "./components/consumer";
 import { useWS } from "../webSocketContext";
 import Loader from "../../loader"
 function Mainmap(props) {
-
     const [showRealTimeLoc, setRealTimeLoc] = useState(false);
 
     // CENTER MAP POSITION
@@ -169,7 +168,7 @@ function Mainmap(props) {
 
                     </LayersControl>
 
-                    {showRealTimeLoc && <RealTimeMarker />}
+                    {showRealTimeLoc && <RealTimeMarker showRealTime={showRealTimeLoc} />}
                 </MapContainer>
 
             </Grid>

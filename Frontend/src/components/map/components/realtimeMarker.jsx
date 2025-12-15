@@ -13,9 +13,9 @@ function RealTimeMarker(){
         
     })
     useEffect(()=>{
-        if (position){
-        map.flyTo(position, 14)}
-    },[position])
+        if (props.showRealTime){
+        map.flyTo(position, 16)}
+    },[props.showRealTime])
     useEffect(()=>{
         const interval = setInterval(()=>{
             navigator.geolocation.getCurrentPosition((pos)=>{
