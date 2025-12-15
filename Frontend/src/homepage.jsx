@@ -34,7 +34,6 @@ function HomePage(props) {
   const handleMenuButtonClick = (event) =>{
       const name = event.currentTarget.dataset.name
       const menuItem = menuButon.find(m => m.Button == name)
-      console.log(menuItem)
       if (menuItem.ref) { 
         navigate(menuItem.ref)
       }

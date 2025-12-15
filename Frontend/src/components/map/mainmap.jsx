@@ -20,7 +20,7 @@ function Mainmap(props) {
     // CENTER MAP POSITION
     const position = [12.102462, 120.031814];
 
-    const { map,mapLoading } = useWS();
+    const { map,mapLoading} = useWS();
     const mapData = map; // safe optional chaining
 
     // TOGGLE REALTIME POSITION

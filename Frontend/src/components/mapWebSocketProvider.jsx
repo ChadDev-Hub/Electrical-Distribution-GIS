@@ -4,7 +4,7 @@ import{WSContext} from "./webSocketContext"
 
 
 export function WebSocketProvider({children}){
-     const baseUrl = import.meta.env.VITE_BASE_URL
+    const baseUrl = import.meta.env.VITE_BASE_URL
     const [dasBoardData, setDashBoardData] = useState({
         inactiveConsumer:[],
         totalConsumer:[],

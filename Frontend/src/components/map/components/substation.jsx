@@ -1,4 +1,4 @@
-import React, {useState, useEffect} from "react";
+import React, {useState} from "react";
 import { Marker, Popup } from "react-leaflet";
 import MarkerClusterGroup from "react-leaflet-cluster";
 import SubstationImage from "../../../assets/station.png"
@@ -15,6 +15,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import CircularProgress from '@mui/material/CircularProgress';
 import axios from "axios";
 function SubstationMarker(props){
+    const baseUrl = import.meta.env.VITE_BASE_URL;
     const [loadingSwitch, setLoadingSwitch] = useState({});
       // ICONS 
     const substationIcon = new L.Icon({
@@ -34,7 +35,7 @@ function SubstationMarker(props){
             const formData = new FormData()
             formData.append("substation_name", substationId)
             formData.append("substation_status", event.target.checked)
-            await axios.post("http://127.0.0.1:8000/update/substation", formData, {
+            await axios.post(`${baseUrl}/update/substation`, formData, {
                 headers: {
                     "Content-Type": "multipart/form-data"
                 }

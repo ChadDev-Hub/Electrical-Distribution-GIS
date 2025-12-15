@@ -8,6 +8,7 @@ import L from 'leaflet';
 import axios from "axios";
 
 function TransformerGroup(props){
+    const baseUrl = import.meta.env.VITE_BASE_URL;
     const [loadingSwitch, setLoadingSwitch] = useState({})
     const dtIcon = new L.Icon(
         {
@@ -21,7 +22,7 @@ function TransformerGroup(props){
             const formData = new FormData()
             formData.append("transformer_id", transformer_id)
             formData.append("status", event.target.checked)
-            await axios.post("http://127.0.0.1:8000/update/distribution_transformer",formData,
+            await axios.post(`${baseUrl}/update/distribution_transformer`,formData,
                 {headers: {
                     "Content-Type": "multipart/form-data"
                 }}
