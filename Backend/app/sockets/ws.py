@@ -30,7 +30,8 @@ class ConnectionManager:
         disconnected = []
         for connection in self.active_connections:
             try:
-                await connection.send_json(data)
+                if connection.client_state == "CONNECTED":
+                    await connection.send_json(data)
             except WebSocketDisconnect:
                 disconnected.append(connection)
         for con in disconnected:
