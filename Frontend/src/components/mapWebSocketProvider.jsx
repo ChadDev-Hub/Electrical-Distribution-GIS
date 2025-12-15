@@ -2,14 +2,17 @@ import React,{useEffect, useState} from "react";
 import useWebSocket from "react-use-websocket";
 import{WSContext} from "./webSocketContext"
 
+
 export function WebSocketProvider({children}){
+     const baseUrl = import.meta.env.VITE_BASE_URL
     const [dasBoardData, setDashBoardData] = useState({
         inactiveConsumer:[],
         totalConsumer:[],
         plLength:[],
         slLength:[]
     })
-
+    
+    const [mapLoading, setMapLoading] = useState(true)
     const [mapData, setMapData] = useState({
             substationData: [],
             primaryLineData: [],
@@ -19,8 +22,19 @@ export function WebSocketProvider({children}){
     
         })
 
-    const {lastJsonMessage:mapMsg}= useWebSocket("http://127.0.0.1:8000/ws/mapdata");
-    const {lastJsonMessage:dashBoardMsg} = useWebSocket("http://127.0.0.1:8000/ws/dashboard");
+    const {lastJsonMessage:mapMsg} = new useWebSocket(`${baseUrl}/ws/mapdata`,
+        {
+            shouldReconnect: () => true,
+        }
+    );
+
+    const {lastJsonMessage:dashBoardMsg} = new  useWebSocket(`${baseUrl}/ws/dashboard`,
+        {
+            shouldReconnect: () => true,
+        }
+    );
+    
+
     // USE EFFECT FOR MAP DATA
     useEffect(() => {
         const getMapData = async() =>{
@@ -31,6 +45,7 @@ export function WebSocketProvider({children}){
                 slData: mapMsg.features[3].secondary_line,
                 consumerData: mapMsg.features[4].consumer
             })
+            setMapLoading(false);
         }
         if (!mapMsg) return; // early return inside effect, not before
         switch (mapMsg.type) {
@@ -67,7 +82,8 @@ export function WebSocketProvider({children}){
 
     const values ={
         map: mapData,
-        dashboard: dasBoardData
+        dashboard: dasBoardData,
+        mapLoading: mapLoading
     }
 
     return (

@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends, WebSocket, Form, WebSocketDisconnect
+from fastapi.responses import JSONResponse
 from fastapi.exceptions import HTTPException
 from sqlmodel.ext.asyncio.session import AsyncSession
 from sqlmodel import select, asc
@@ -9,7 +10,19 @@ from geojson import Point, FeatureCollection, Feature, loads, load
 from ..sockets.ws import manager
 import asyncio
 from .dashboard_router import get_inactive_consumer
+import os
+from dotenv import load_dotenv
+import jwt
+from jwt.exceptions import PyJWTError
+import time
+
+load_dotenv()
+
 map_router = APIRouter()
+
+ORIGIN = os.getenv("ORIGIN")
+    
+
 # ASYNC FUNCTION TO YIEL SESSION
 async def get_suppasession():
     async with AsyncSession(Db().supa_engine) as session:
@@ -215,7 +228,11 @@ async def get_data(session:AsyncSession = supasessionDep):
 # REAL-TIME MAP WEBSOCKETE DATA
 @map_router.websocket("/ws/mapdata")
 async def get_latest_substation(websocket:WebSocket, supasession:AsyncSession = supasessionDep):
-    await manager.connect(websocket)
+    await websocket.accept()
+    origin = websocket.headers.get("origin")
+    if origin != ORIGIN:
+        return
+    await manager.add(websocket)
     # INITIAL DATA 
     feat = await get_mapdata(supasession)
     await manager.broadcast_json(feat)

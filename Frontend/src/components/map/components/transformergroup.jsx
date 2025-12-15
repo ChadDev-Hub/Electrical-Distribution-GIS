@@ -55,6 +55,9 @@ function TransformerGroup(props){
                                 <Typography gutterBottom variant="h6" component="div">
                                     <strong>{props.transformerId}</strong>
                                 </Typography>
+                                <Typography>
+                                    {props.dttype}
+                                </Typography>
                                 <Typography variant="body2" fontSize={12} component="div" sx={{width:"100%"}}>
                                     <strong>{props.type}</strong>
                                     <p><strong>Description: </strong>{props.description}</p>

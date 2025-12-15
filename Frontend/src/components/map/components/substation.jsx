@@ -74,7 +74,7 @@ function SubstationMarker(props){
                             </CardActionArea>
                         
                         <CardActions>
-                            <Stack sx={{ justifyContent: 'flex-end', width: "100%", bgcolor: "ivory" }} direction="row">
+                            <Stack sx={{ justifyContent: 'flex-end', width: "100%"}} direction="row">
                                 {
                                     loadingSwitch[props.substationName] ? (<CircularProgress size="25px" />) :
                                         (<Tooltip title={`Turn ${props.isactive ? "Off" : "On"} Substation`}>

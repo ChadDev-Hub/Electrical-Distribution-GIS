@@ -8,6 +8,10 @@ class ConnectionManager:
         await websocket.accept()
         self.active_connections.append(websocket)
 
+    async def add(self, websocket: WebSocket):
+        self.active_connections.append(websocket)
+    
+    
     def disconnect(self, websocket: WebSocket):
         self.active_connections.remove(websocket)
 
@@ -17,6 +21,10 @@ class ConnectionManager:
     async def broadcast(self, message: str):
         for connection in self.active_connections:
             await connection.send_text(message)
+    
+    async def received_json(self):
+        for connection in self.active_connections:
+            connection.receive_json()
     
     async def broadcast_json(self, data):
         disconnected = []

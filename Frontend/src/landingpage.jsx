@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, {  useState } from "react";
 import { Grid, Typography, Paper, Box, Fab, Container, Stack, Collapse, Grow } from "@mui/material";
 import ExploreRoundedIcon from '@mui/icons-material/ExploreRounded';
 import electricalBackground from './assets/Electric-Pole.jpg'
@@ -21,13 +21,21 @@ function LandingPage(props) {
             transition: 1000
         }
     ]
-
-
+    
+    const handleScroll = (event) => {
+        const scrollTop = event.target.scrollTop;
+        if (scrollTop > 150){
+            setReadMore(true)
+        }else{
+            setReadMore(false)
+        }
+    };
     return (
-        <Box overflow="scroll" onScroll={()=>setReadMore(!readMore)} sx={{
+        <Box overflow="scroll" onScroll={handleScroll} sx={{
             backgroundImage: `url(${electricalBackground})`,
             backgroundSize: "cover",
             height: "100vh",
+            
             
         }}
         >
@@ -40,7 +48,7 @@ function LandingPage(props) {
                     backgroundColor: "rgba(255, 255, 255, 0.2)",
                     backdropFilter: "blur(0.2rem)",
                     height: "100%",
-                    borderRadius: 1
+                    borderRadius: 1,
                 }}>
                     <Typography textAlign={props.isMobile ? "center" : "left"} variant={props.isMobile ? "h5" : "h3"} sx={{ color: "black", fontWeight: "bold", fontFamily: "ui-sans-serif" }}>
                         ELECTRICAL DISTRIBUTION SYSTEM MAP
@@ -52,10 +60,10 @@ function LandingPage(props) {
                         intuitive and scaleable GIS Application.
                     </Typography>
                     <Stack gap={2} sx={{ width: "100%" }} direction="row" justifyContent="flex-end">
-                        <Fab variant="extended" onClick={() => setReadMore(!readMore)}>
+                        {!props.isMobile && <Fab variant="extended" onClick={() => setReadMore(!readMore)}>
                             Read
                             <ReadMoreRoundedIcon />
-                        </Fab>
+                        </Fab>}
                         <Fab
                             variant="extended"
                             href="/homepage/map">
@@ -66,11 +74,15 @@ function LandingPage(props) {
                     </Stack>
                 </Box>
             </Stack>
-            <Stack justifyContent="space-evenly" gap={2} alignContent="space-evenly" direction={props.isMobile ? "column" : "row"} px={props.isMobile ? 1 : 10}>
+            <Stack 
+            justifyContent="space-evenly" 
+            gap={2} alignContent="space-evenly" 
+            direction={props.isMobile ? "column" : "row"} 
+            px={props.isMobile ? 1 : 10}
+            paddingBottom={props.isMobile? 2: 0}>
                 {readMe.map((r, index) => (
-                    <Grow timeout={r.transition} in={readMore}>
+                    <Grow key={index} timeout={r.transition} in={readMore}>
                         <Box
-
                             sx={{
                                 width: props.isMobile ? "100%" : "40%",
                                 backgroundColor: "rgba(255, 255, 255, 0.2)",
@@ -87,7 +99,7 @@ function LandingPage(props) {
                                 variant={props.isMobile ? "h5" : 'h4'}>
                                 {r.title}
                             </Typography>
-                            <Typography color="black" variant="h6">
+                            <Typography color="black">
                                 {r.content}
                             </Typography>
                             <Typography color="black">
@@ -95,12 +107,8 @@ function LandingPage(props) {
                                     {r.list.map((l) => <li>{l}</li>)}
                                 </ul>
                             </Typography>
-
-
                         </Box>
-
                     </Grow>))}
-
             </Stack>
         </Box>
     )
