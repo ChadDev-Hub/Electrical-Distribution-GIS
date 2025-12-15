@@ -1,10 +1,11 @@
 import React, { useEffect, useState } from "react";
-import { Marker} from "react-leaflet";
+import { Marker, useMap, useMapEvent} from "react-leaflet";
 import BoyRoundedIcon from '@mui/icons-material/BoyRounded';
 import L from 'leaflet'
 import {renderToString } from "react-dom/server";
 function RealTimeMarker(){
     const [position, setPosition] = useState(null)
+    const map = useMap()
     const realTimeIcon = L.divIcon({
         html: renderToString(<BoyRoundedIcon style={{ fontSize: 30, color: "#1976d2" }}/>),
         className:"",
@@ -12,9 +13,14 @@ function RealTimeMarker(){
         
     })
     useEffect(()=>{
+        if (position){
+        map.flyTo(position, 14)}
+    },[position])
+    useEffect(()=>{
         const interval = setInterval(()=>{
             navigator.geolocation.getCurrentPosition((pos)=>{
                 setPosition([pos.coords.latitude,pos.coords.longitude]);
+                
             });
         },2000)
         return () => clearInterval(interval)
