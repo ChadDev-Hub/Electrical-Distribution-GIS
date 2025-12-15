@@ -1,5 +1,4 @@
 from fastapi import WebSocket, WebSocketDisconnect
-from geojson import FeatureCollection
 class ConnectionManager:
     def __init__(self):
         self.active_connections: list[WebSocket] = []
