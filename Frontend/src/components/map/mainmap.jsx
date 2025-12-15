@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { MapContainer, TileLayer, Polyline, Marker, Popup, LayerGroup, LayersControl, Tooltip as LeafletToolTip, ZoomControl } from 'react-leaflet'
+import { MapContainer, TileLayer, Polyline, Marker, Popup, LayerGroup, LayersControl, Tooltip as LeafletToolTip, useMap } from 'react-leaflet'
 import Button from '@mui/material/Button';
 import ElectricBoltIcon from '@mui/icons-material/ElectricBolt';
 import SubstationMarker from "./components/substation";
@@ -13,19 +13,27 @@ import SecondaryLine from "./components/secondaryLine";
 import ConsumerMarker from "./components/consumer";
 import { useWS } from "../webSocketContext";
 import Loader from "../../loader"
+
 function Mainmap(props) {
     const [showRealTimeLoc, setRealTimeLoc] = useState(false);
+    const [realtimePosition, setRealTimePosition] = useState(null)
 
     // CENTER MAP POSITION
     const position = [12.102462, 120.031814];
 
-    const { map,mapLoading} = useWS();
+    const {map , mapLoading} = useWS();
     const mapData = map; // safe optional chaining
 
     // TOGGLE REALTIME POSITION
     const showRealtime = () => {
-        setRealTimeLoc(!showRealTimeLoc)
+        setRealTimeLoc(!showRealTimeLoc);
+        navigator.geolocation.getCurrentPosition((pos)=>{
+            setRealTimePosition([pos.coords.latitude, pos.coords.longitude])
+        });
     }
+    // Show Realtime Every 2 seconds
+    
+    
     return (
         <Grid container sx={{ height: "100vh", weight: "100vh",  }}>
             
@@ -168,7 +176,7 @@ function Mainmap(props) {
 
                     </LayersControl>
 
-                    {showRealTimeLoc && <RealTimeMarker showRealTime={showRealTimeLoc} />}
+                    {showRealTimeLoc && <RealTimeMarker realtimepos = {realtimePosition} />}
                 </MapContainer>
 
             </Grid>
