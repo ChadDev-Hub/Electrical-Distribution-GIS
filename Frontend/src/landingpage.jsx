@@ -3,10 +3,12 @@ import { Grid, Typography, Paper, Box, Fab, Container, Stack, Collapse, Grow } f
 import ExploreRoundedIcon from '@mui/icons-material/ExploreRounded';
 import electricalBackground from './assets/Electric-Pole.jpg'
 import ReadMoreRoundedIcon from '@mui/icons-material/ReadMoreRounded';
+import { useNavigate } from "react-router-dom";
 
 
 function LandingPage(props) {
     const [readMore, setReadMore] = useState(false)
+    const navigate = useNavigate()
     const readMe = [
         {
             title: "THE GIS SYSTEMS INCLUDES",
@@ -21,6 +23,9 @@ function LandingPage(props) {
             transition: 1000
         }
     ]
+    const handleClick = () => {
+        navigate("/homepage/map")
+    }
     
     const handleScroll = (event) => {
         const scrollTop = event.target.scrollTop;
@@ -66,7 +71,7 @@ function LandingPage(props) {
                         </Fab>}
                         <Fab
                             variant="extended"
-                            href="/homepage/map">
+                            onClick={handleClick}>
                             Explore
                             <ExploreRoundedIcon />
                         </Fab>

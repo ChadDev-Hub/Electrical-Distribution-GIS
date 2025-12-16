@@ -14,6 +14,7 @@ import { Container, Stack, Switch } from "@mui/material";
 import { renderToStaticMarkup } from "react-dom/server";
 import CircularProgress from '@mui/material/CircularProgress';
 import axios from "axios";
+import L from 'leaflet'
 function SubstationMarker(props){
     const baseUrl = import.meta.env.VITE_BASE_URL;
     const [loadingSwitch, setLoadingSwitch] = useState({});
