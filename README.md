@@ -25,4 +25,4 @@ This GIS interactive map includes the following location and data:
 - Secondary Lines
 - Customers
 
-[![DEMO VIDEO](/Frontend/public/landing-page.png)]("https://youtu.be/lYme4Vu1WgU?si=RVejxcgwRvdJvbqr")
+[![DEMO VIDEO](/Frontend/public/landing-page.png)](https://youtu.be/lYme4Vu1WgU?si=RVejxcgwRvdJvbqr)
