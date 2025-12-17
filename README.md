@@ -15,7 +15,7 @@ a complete GIS Data that can be use in Planning, analysis and customer Service.
 #### Functionalities
 
 The user can Turn off and Turn on the Substation and Tranformer to Identify the affected downstream components.
-It Provides A realtime Interaction on GIS Web map on multiple User.
+It Provides A real-time Interaction on GIS Web map on multiple User.
 
 This GIS interactive map includes the following location and data:
 
