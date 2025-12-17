@@ -25,4 +25,16 @@ This GIS interactive map includes the following location and data:
 - Secondary Lines
 - Customers
 
+### DASHBOARD
+
+!['DASHBOARD'](/Frontend/public/dashboard.png)
+
+#### Functionalities (Dashboard)
+
+The dashboard provides additional overview of some data such as:
+
+- Number of inactive, active and total consumer
+- table for inactive consumer affected when turning off the substation or transformer where they are connected upstream.
+- line length primary line and secondary line group by each substation.
+
 [![DEMO VIDEO](/Frontend/public/landing-page.png)](https://youtu.be/lYme4Vu1WgU?si=RVejxcgwRvdJvbqr)
