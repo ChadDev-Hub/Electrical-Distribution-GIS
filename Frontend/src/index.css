@@ -57,6 +57,15 @@ h1 {
   to {transform:perspective(300px) translateZ(180px);opacity:0}
 }
 
+.menu {
+  color: #777;
+}
+
+.menu.active {
+  color: #1976d2;
+}
+
+
 /* button {
   border-radius: 8px;
   border: 1px solid transparent;

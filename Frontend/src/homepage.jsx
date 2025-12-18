@@ -11,33 +11,32 @@ import {
   List,
   ListItemButton,
   ListItemText,
-  Stack
+  Stack,
+  ListItemIcon
 } from "@mui/material";
 import MenuIcon from "@mui/icons-material/Menu";
-import { Outlet, useNavigate } from "react-router-dom";
+import { Outlet, NavLink } from "react-router-dom";
 import DarkModeIcon from '@mui/icons-material/DarkMode';
 import LightModeIcon from '@mui/icons-material/LightMode';
+import FmdGoodIcon from '@mui/icons-material/FmdGood';
+import DashboardIcon from '@mui/icons-material/Dashboard';
 function HomePage(props) {
+  const year = new Date().getFullYear()
   const theme = useTheme();
-  const navigate = useNavigate()
   const [open, setOpen] = useState(false);
   const menuButon = [{
-    "Button": "Map",
-    "ref": "/homepage/map"
+    Button: "Map",
+    icon: <FmdGoodIcon />,
+    ref: "/homepage/map"
   },
   {
-    "Button": "DashBoard",
-    "ref" : '/homepage/dashboard'
-  }]
+    Button: "DashBoard",
+    icon: <DashboardIcon />,
+    ref: '/homepage/dashboard'
 
-
-  const handleMenuButtonClick = (event) =>{
-      const name = event.currentTarget.dataset.name
-      const menuItem = menuButon.find(m => m.Button == name)
-      if (menuItem.ref) { 
-        navigate(menuItem.ref)
-      }
   }
+  ]
+
   return (
     <>
       {/* NAVBAR (desktop only) */}
@@ -104,11 +103,11 @@ function HomePage(props) {
               Navigation
             </Typography>
             <IconButton
-              
+
               aria-label={props.darkMode ? "Switch to light mode" : "Switch to dark mode"}
               onClick={props.switchTheme}
               sx={{
-                color:props.darkMode? "yellow" : "orange",
+                color: props.darkMode ? "yellow" : "orange",
                 position: "flex",
                 justifySelf: "center",
                 background: props.darkMode ? "#000000ff" : "#f0f0f0",
@@ -117,22 +116,38 @@ function HomePage(props) {
 
               }}
             >
-              {props.darkMode ? <DarkModeIcon/> : <LightModeIcon/>}
+              {props.darkMode ? <DarkModeIcon /> : <LightModeIcon />}
             </IconButton>
           </Stack>
           <Divider sx={{ mb: 2, mt: 2 }} />
           <List>
             {menuButon.map((text, index) => (
-              <ListItemButton  key={index} data-name={text.Button} onClick={handleMenuButtonClick} sx={{ borderRadius: 2, mb: 1, '&:hover': { backgroundColor: theme.palette.primary.light, color: '#fff' } }}>
+              <ListItemButton key={index} component={NavLink} to={text.ref} data-name={text.Button} sx={{
+                borderRadius: 2,
+                mb: 1,
+                '&.active': {
+                  backgroundColor: theme.palette.primary.main,
+                  color: '#fff'
+                },
+                '&:hover': { backgroundColor: theme.palette.primary.light, color: '#fff' }
+              }}>
+                <ListItemIcon>
+                  {text.icon}
+                </ListItemIcon>
                 <ListItemText primary={text.Button} />
               </ListItemButton>
             ))}
           </List>
+          <Divider />
         </Box>
+        <Box display="flex" alignItems="flex-end" justifyContent="center" sx={{ height: "100%" }}>
+            <Typography variant="body2" sx={{ fontSize: 10, textAlign: "center", "color": "GrayText" }}>
+              © {year} Richard Rojo Jr.. All rights reserved.
+            </Typography>
+          </Box>
       </Drawer>
-      
       {/* MAIN CONTENT */}
-            <Outlet/>
+      <Outlet />
     </>
   );
 }

@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { MapContainer, TileLayer, Polyline, Marker, Popup, LayerGroup, LayersControl, Tooltip as LeafletToolTip, useMap } from 'react-leaflet'
+import { MapContainer, TileLayer, Polyline, Marker, Popup, LayerGroup, LayersControl, Tooltip as LeafletToolTip } from 'react-leaflet'
 import Button from '@mui/material/Button';
 import ElectricBoltIcon from '@mui/icons-material/ElectricBolt';
 import SubstationMarker from "./components/substation";
@@ -175,7 +175,6 @@ function Mainmap(props) {
 
 
                     </LayersControl>
-
                     {showRealTimeLoc && <RealTimeMarker realtimepos = {realtimePosition} />}
                 </MapContainer>
 

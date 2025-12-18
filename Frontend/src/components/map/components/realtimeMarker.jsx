@@ -18,6 +18,7 @@ function RealTimeMarker(props){
             map.flyTo(props.realtimepos)
         }
     },[props.realtimepos])
+    
     useEffect(()=>{
             const interval = setInterval(()=>{
                 navigator.geolocation.getCurrentPosition((pos)=>{
