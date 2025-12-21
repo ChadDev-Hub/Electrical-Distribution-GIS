@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { useTheme } from "@mui/material/styles";
+import SearchConsumer from "./components/map/components/searchConsumer";
 import {
   AppBar,
   Toolbar,
@@ -20,10 +21,12 @@ import DarkModeIcon from '@mui/icons-material/DarkMode';
 import LightModeIcon from '@mui/icons-material/LightMode';
 import FmdGoodIcon from '@mui/icons-material/FmdGood';
 import DashboardIcon from '@mui/icons-material/Dashboard';
+import { useWS } from "./components/webSocketContext";
 function HomePage(props) {
   const year = new Date().getFullYear()
   const theme = useTheme();
   const [open, setOpen] = useState(false);
+
   const menuButon = [{
     Button: "Map",
     icon: <FmdGoodIcon />,
@@ -36,7 +39,8 @@ function HomePage(props) {
 
   }
   ]
-
+  
+ 
   return (
     <>
       {/* NAVBAR (desktop only) */}
@@ -54,9 +58,7 @@ function HomePage(props) {
             <Typography variant="h6" fontWeight={700} color="primary">
               Electrical Distribution Maps
             </Typography>
-
             <Box dis sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-
               <IconButton aria-label="Open menu" onClick={() => setOpen(!open)}>
                 <MenuIcon />
               </IconButton>

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useRef, useState } from "react";
 import { MapContainer, TileLayer, Polyline, Marker, Popup, LayerGroup, LayersControl, Tooltip as LeafletToolTip } from 'react-leaflet'
 import Button from '@mui/material/Button';
 import ElectricBoltIcon from '@mui/icons-material/ElectricBolt';
@@ -13,16 +13,17 @@ import SecondaryLine from "./components/secondaryLine";
 import ConsumerMarker from "./components/consumer";
 import { useWS } from "../webSocketContext";
 import Loader from "../../loader"
-
+import SearchConsumer from "./components/searchConsumer";
 function Mainmap(props) {
     const [showRealTimeLoc, setRealTimeLoc] = useState(false);
     const [realtimePosition, setRealTimePosition] = useState(null)
-
-    // CENTER MAP POSITION
+    const markerRefs = useRef({})
+    const clusterGroupRef = useRef()
+    // CENTER MAP POSITION;
     const position = [12.102462, 120.031814];
 
     const {map , mapLoading} = useWS();
-    const mapData = map; // safe optional chaining
+    const mapData = map;
 
     // TOGGLE REALTIME POSITION
     const showRealtime = () => {
@@ -31,14 +32,17 @@ function Mainmap(props) {
             setRealTimePosition([pos.coords.latitude, pos.coords.longitude])
         });
     }
-    // Show Realtime Every 2 seconds
+    
+    const consumerData = map?.consumerData.map((d)=>({
+    id: d.id,
+    label: `${d.properties.account_no} | ${d.properties.name}`,
+    location: [d.geometry.coordinates[1],d.geometry.coordinates[0]]
+    }))
     
     
     return (
         <Grid container sx={{ height: "100vh", weight: "100vh",  }}>
-            
-            <Grid size={12} sx={{ p: props.isMobile ? 2 : 10, paddingBottom: props.isMobile ? 12 : 3 }}>
-               
+            <Grid size={12} sx={{ p: props.isMobile ? 2 : 10, paddingBottom: props.isMobile ? 12 : 3 }}>       
                 <MapContainer center={position} zoom={9} scrollWheelZoom={true} style={{height: "100%", width: "100%", borderRadius: 20 }}>
                      {mapLoading && <Box
                     sx={{
@@ -52,7 +56,9 @@ function Mainmap(props) {
                         zIndex: 1000
                     }}>
                     <Loader />
+                    
                 </Box>}
+                {consumerData && <SearchConsumer options={consumerData} markerRefs={markerRefs} clusterGroupRef={clusterGroupRef} isMobile={props.isMobile}/>}
                     <RealtimeButton showRealtime={showRealtime} showRealTimeLoc={showRealTimeLoc} />
                     <TileLayer
                         attribution='&copy; <a href="https://carto.com/attributions">CARTO / OpenStreetMap</a>'
@@ -73,7 +79,6 @@ function Mainmap(props) {
                                         voltageRating={m.properties.voltage_rating}
                                     />
                                 ))}
-
                             </LayerGroup>
 
                         </LayersControl.Overlay>
@@ -150,14 +155,17 @@ function Mainmap(props) {
                             {/* Consumer */}
                             <LayerGroup>
                                 {mapData.consumerData && <MarkerClusterGroup
-                                    disableClusteringAtZoom={18}  // number
-                                    showCoverageOnHover={false}   // optional
+                                    ref = {clusterGroupRef}
+                                    disableClusteringAtZoom={18}  
+                                    showCoverageOnHover={false}   
                                     chunkedLoading={true}
+                    
 
                                 >
                                     {mapData.consumerData.map((c) => (
                                         <ConsumerMarker
                                             key={c.id}
+                                            id = {c.id}
                                             coordinates={c.geometry.coordinates}
                                             accountNumber={c.properties.account_no}
                                             name={c.properties.name}
@@ -167,6 +175,7 @@ function Mainmap(props) {
                                             village={c.properties.village}
                                             municipality={c.properties.municipality}
                                             status={c.properties.status}
+                                            markerRefs={markerRefs}
                                         />
                                     ))}
                                 </MarkerClusterGroup>}

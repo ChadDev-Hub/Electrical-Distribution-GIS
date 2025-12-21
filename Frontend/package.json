@@ -25,6 +25,7 @@
     "react-leaflet-cluster": "^4.0.0",
     "react-router-dom": "^7.9.6",
     "react-use-websocket": "^4.13.0",
+    "react-window": "^2.2.3",
     "websocket": "^1.0.35"
   },
   "devDependencies": {

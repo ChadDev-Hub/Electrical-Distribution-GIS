@@ -14,7 +14,7 @@ function ConsumerMarker(props){
         className:""
     })
     return (
-        <Marker position={[props.coordinates[1], props.coordinates[0]]}  icon={ElectricMeter}>
+        <Marker position={[props.coordinates[1], props.coordinates[0]]}  icon={ElectricMeter} ref={(el) => (props.markerRefs.current[props.id] = el)}>
             <Popup>
                 <Card>
                     <CardContent>
