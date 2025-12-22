@@ -36,7 +36,7 @@ function SearchConsumer(props){
         value={value}
         onChange={handleChange}
         clearOnEscape
-        sx={{position:"absolute", top:10, left: 50, width:props.isMobile? 250 : 300, zIndex:500}}
+        sx={{ position:"absolute", top: 10, left: 50, width: props.isMobile ? 230 : 300 , zIndex:500}}
         getOptionLabel={(o) => o.label}
         filterOptions={filterOptions}
         options={props.options}

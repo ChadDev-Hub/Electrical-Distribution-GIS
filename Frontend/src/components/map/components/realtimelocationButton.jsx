@@ -6,7 +6,7 @@ import NavigationRoundedIcon from '@mui/icons-material/NavigationRounded';
 
 function RealtimeButton(props){
     return(
-        <Fab onClick={props.showRealtime} size="small" color={props.showRealTimeLoc? "primary":"default"} sx={{position:"absolute", top:250, left:10}}>
+        <Fab onClick={props.showRealtime} size="small" color={props.showRealTimeLoc? "primary":"default"} sx={{position:"absolute", top:props.isMobile?100:150, left:10}}>
                 {props.showRealTimeLoc? <NavigationRoundedIcon/> :<NavigationTwoToneIcon/>}
         </Fab>
     )
