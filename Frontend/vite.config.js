@@ -9,13 +9,5 @@ export default defineConfig({
         plugins: [['babel-plugin-react-compiler']],
       },
     }),
-  ],
-  build: {
-    sourcemap: false,
-    rollupOptions: {
-      output: {
-        inlineDynamicImports: false,
-      }
-    }
-  }
+  ]
 })
