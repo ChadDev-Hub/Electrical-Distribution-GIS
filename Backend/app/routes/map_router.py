@@ -229,18 +229,18 @@ async def get_data(session:AsyncSession = supasessionDep):
 @map_router.websocket("/ws/mapdata")
 async def get_latest_substation(websocket:WebSocket):
     await websocket.accept()
-    origin = websocket.headers.get("origin")
-    if origin != ORIGIN:
-        await websocket.close()
-        return
+    # origin = websocket.headers.get("origin")
+    # if origin != ORIGIN:
+    #     await websocket.close()
+    #     return
     # INITIAL DATA
-    await manager.add(websocket)
+    
     try:
         async with AsyncSession(Db().supa_engine) as session:
             feat = await get_mapdata(session)
 
         await websocket.send_json(feat)
-        
+        await manager.add(websocket)
         while True:
             await asyncio.sleep(10)
     except WebSocketDisconnect:
