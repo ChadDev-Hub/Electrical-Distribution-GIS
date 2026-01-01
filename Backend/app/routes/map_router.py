@@ -234,15 +234,14 @@ async def get_latest_substation(websocket:WebSocket):
     #     await websocket.close()
     #     return
     # INITIAL DATA
-    
+    await manager.add(websocket)
     try:
         async with AsyncSession(Db().supa_engine) as session:
             feat = await get_mapdata(session)
 
         await websocket.send_json(feat)
-        await manager.add(websocket)
         while True:
-            await asyncio.sleep(10)
+            await websocket.receive_text()
     except WebSocketDisconnect:
         manager.disconnect(websocket)
    
