@@ -36,6 +36,7 @@ export function WebSocketProvider({children}){
                 consumerData: data.features[4].consumer
                 })
                     }
+                setMapLoading(false);
                 }
                 catch(err){
                     console.error("Failed to parse map WS message", err)

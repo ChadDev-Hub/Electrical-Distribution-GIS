@@ -109,7 +109,7 @@ function LandingPage(props) {
                             </Typography>
                             <Typography color="black">
                                 <ul>
-                                    {r.list.map((l) => <li>{l}</li>)}
+                                    {r.list.map((l, index) => <li key={index}>{l}</li>)}
                                 </ul>
                             </Typography>
                         </Box>

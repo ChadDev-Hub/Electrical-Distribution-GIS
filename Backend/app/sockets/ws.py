@@ -10,9 +10,9 @@ class ConnectionManager:
     async def add(self, websocket: WebSocket):
         self.active_connections.append(websocket)
     
-    
     def disconnect(self, websocket: WebSocket):
-        self.active_connections.remove(websocket)
+        if websocket in self.active_connections:
+            self.active_connections.remove(websocket)
 
     async def send_personal_message(self, message: str, websocket: WebSocket):
         await websocket.send_text(message)
