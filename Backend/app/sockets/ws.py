@@ -26,12 +26,10 @@ class ConnectionManager:
             connection.receive_json()
     
     async def broadcast_json(self, data):
-        disconnected = []
-        for connection in self.active_connections:
+        for connection in self.active_connections[:]:
             try:
                 await connection.send_json(data)
             except WebSocketDisconnect:
-                disconnected.append(connection)
-        for con in disconnected:
-            self.active_connections.remove(con)
+                self.active_connections.remove(connection)
+            
 manager = ConnectionManager()
