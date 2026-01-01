@@ -19,15 +19,15 @@ function RealTimeMarker(props){
         }
     },[props.realtimepos])
     
-    useEffect(()=>{
-            const interval = setInterval(()=>{
-                navigator.geolocation.getCurrentPosition((pos)=>{
-                    setPosition([pos.coords.latitude,pos.coords.longitude]);
-                });
-            },2000)
-            return () => clearInterval(interval)
-        },[]);
-    if (!position) return null;
+    // useEffect(()=>{
+    //         const interval = setInterval(()=>{
+    //             navigator.geolocation.getCurrentPosition((pos)=>{
+    //                 setPosition([pos.coords.latitude,pos.coords.longitude]);
+    //             });
+    //         },2000)
+    //         return () => clearInterval(interval)
+    //     },[]);
+    // if (!position) return null;
     return(
         <Marker position={position} icon={realTimeIcon}>
                
